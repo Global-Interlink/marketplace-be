@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BlockchainService } from 'src/blockchain/blockchain.service';
 import { Address } from 'src/blockchain/entities/address.entity';
-import { CrawlHistory } from 'src/blockchain/entities/crawl_history.entity';
 import { Network } from 'src/blockchain/entities/network.entity';
 import { Order } from 'src/marketplace/order/entities/order.entity';
 import { OrderModule } from 'src/marketplace/order/order.module';
@@ -21,7 +20,6 @@ import { CronService } from './cron.service';
       Network,
       Address,
       User,
-      CrawlHistory,
       SaleItem,
       Auction,
       Order,

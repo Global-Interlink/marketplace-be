@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 import { BlockchainService } from './blockchain.service';
 import { BlockchainController } from './blockchain.controller';
-import { CrawlHistory } from './entities/crawl_history.entity';
 import { OrderModule } from 'src/marketplace/order/order.module';
 import { User } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
@@ -22,7 +21,6 @@ import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
     TypeOrmModule.forFeature([
       Network,
       Address,
-      CrawlHistory,
       User,
       SignMessage,
       Order,

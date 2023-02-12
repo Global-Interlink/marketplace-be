@@ -23,43 +23,7 @@ export class NftCollectionService {
     featuredImage: Express.Multer.File,
     creator: User,
   ) {
-    // Validate
-    if (!logo || !banner || !featuredImage) {
-      throw new BadRequestException(
-        'logo, banner, featuredImage are all required',
-      );
-    }
-    const existingCollectionCount = await this.nftCollectionRepository.count({
-      where: {
-        name: createNftCollectionDto.name,
-        creator: {
-          id: creator.id,
-        }
-      }
-    })
-    if (existingCollectionCount > 0) {
-      throw new BadRequestException(`Collection ${createNftCollectionDto.name} has been existed`);
-    }
-
-    // Upload to ipfs
-    const results = await this.ipfsService.uploadMultiples([
-      logo.buffer.toString('base64'),
-      banner.buffer.toString('base64'),
-      featuredImage.buffer.toString('base64'),
-    ]);
-    const [logoUrl, bannerUrl, featuredImageUrl] = results;
-    let collection = new NFTCollection();
-    collection.name = createNftCollectionDto.name;
-    collection.description = createNftCollectionDto.description;
-    collection.logo = logoUrl.toString();
-    collection.logoFileType = logo.mimetype;
-    collection.banner = bannerUrl.toString();
-    collection.bannerFileType = banner.mimetype;
-    collection.featuredImage = featuredImageUrl.toString();
-    collection.featuredImageFileType = featuredImage.mimetype;
-    collection.creator = creator;
-    collection = await this.nftCollectionRepository.save(collection);
-    return collection;
+    return "not supported right now";
   }
 
   findAll(query: PaginateQuery): Promise<Paginated<NFTCollection>> {

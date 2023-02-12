@@ -28,68 +28,7 @@ export class NftService {
     image: Express.Multer.File,
     creator: User,
   ) {
-    // Validate
-    if (!image) {
-      throw new BadRequestException('image required');
-    }
-
-    // Upload to ipfs
-    const imageIpfs = await this.ipfsService.upload(
-      image.buffer.toString('base64'),
-    );
-
-    // find collection
-    const collection = await this.nftCollectioService.findOneByUser(
-      createNftDto.collectionId,
-      creator,
-    );
-    // Validate
-    if (!collection) {
-      throw new BadRequestException('invalid collection');
-    }
-
-    // save NFT
-    const nft = new NFT({
-      name: createNftDto.name,
-      description: createNftDto.description,
-      image: imageIpfs.toString(),
-      creator: creator,
-      owner: creator,
-      fileType: image.mimetype,
-    });
-    if (collection) {
-      nft.collection = collection;
-    }
-
-    const savedNft = await this.nftRepository.save(nft);
-
-    // Admin Sign
-    const adminStruct = {
-      offchainOwner: nft.owner.address.address,
-      collection: process.env.FACTORY_ADDRESS, // NFT Factory address
-      amount: 1,
-      uniqueIdOffchain: nft.tokenId,
-    };
-    const hashAdmin = await this.hash_admin_f(adminStruct);
-    const signData = await this.sign_hash(
-      hashAdmin,
-      process.env.ADMIN_PRIVATE_KEY,
-    );
-
-    // save sign admin
-    savedNft.signAdmin = JSON.stringify(signData);
-    await this.nftRepository.save(savedNft);
-
-    // save nft property
-    const propertyData = JSON.parse(createNftDto.property);
-
-    Promise.all(
-      propertyData.map(async (item: NftPropertyType) => {
-        await this.nftProperyService.create(item, nft);
-      }),
-    );
-
-    return nft;
+    return "Not supported right now";
   }
 
   findOne(id: string) {
@@ -106,9 +45,6 @@ export class NftService {
         owner: {
           address: true,
         },
-        creator: {
-          address: true,
-        },
         collection: true,
         properties: true,
       },
@@ -119,7 +55,6 @@ export class NftService {
     const collectionId = collection.id;
     const queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
-      .leftJoinAndSelect('nfts.creator', 'creator')
       .leftJoinAndSelect('nfts.owner', 'owner')
       .leftJoinAndSelect('creator.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
@@ -142,10 +77,8 @@ export class NftService {
     const userId = user.id;
     const queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
-      .leftJoinAndSelect('nfts.creator', 'creator')
       .leftJoinAndSelect('nfts.collection', 'collection')
       .leftJoinAndSelect('nfts.owner', 'owner')
-      .leftJoinAndSelect('creator.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
       .where('nfts.ownerId = :userId', { userId })
       .orderBy('nfts.createdDate', 'DESC');

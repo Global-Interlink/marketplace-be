@@ -26,9 +26,6 @@ export class User extends BaseEntity {
   @OneToMany(() => NFTCollection, (collection) => collection.creator)
   collections: NFTCollection[];
 
-  @OneToMany(() => NFT, (nft) => nft.creator)
-  createdNfts: NFT[];
-
   @OneToMany(() => NFT, (nft) => nft.owner)
   ownedNfts: NFT[];
 

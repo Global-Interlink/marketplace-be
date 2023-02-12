@@ -2,7 +2,6 @@ import { BaseEntity } from './../../base/entity.base';
 import { TEXT_MEDIUM } from './../../app.constants';
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Address } from './address.entity';
-import { CrawlHistory } from './crawl_history.entity';
 
 @Entity()
 export class Network extends BaseEntity {
@@ -21,7 +20,4 @@ export class Network extends BaseEntity {
 
   @OneToMany(() => Address, (address) => address.network)
   addresses: Address[];
-
-  @OneToMany(() => Address, (address) => address.network)
-  crawls: CrawlHistory[];
 }

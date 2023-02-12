@@ -23,10 +23,6 @@ export class NFT extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  @Generated('increment')
-  tokenId: number;
-
   @Column({
     nullable : true
   })
@@ -63,9 +59,6 @@ export class NFT extends BaseEntity {
   })
   collection: NFTCollection;
 
-  @ManyToOne(() => User, (user) => user.createdNfts)
-  creator: User;
-
   @ManyToOne(() => User, (user) => user.ownedNfts)
   owner: User;
 
@@ -73,11 +66,6 @@ export class NFT extends BaseEntity {
     nullable: true,
   })
   ownedDate: Date;
-
-  @Column({
-    nullable: true,
-  })
-  signAdmin: string;
 
   @Exclude()
   @OneToMany(() => SaleItem, (saleItem) => saleItem.nft)
