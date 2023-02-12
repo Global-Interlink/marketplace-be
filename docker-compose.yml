@@ -1,0 +1,47 @@
+version: '3'
+services: 
+  onus_be_db:
+    image: postgres:14.4
+    env_file:
+      - ./.env
+    environment: 
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+    container_name: onus-postgres-db-${ENV}
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    ports:
+      - '${DATABASE_HOST_PORT}:5432'
+    networks:
+      - be_net
+
+  onus_be:
+    build: 
+      context: .
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./.env
+    ports: 
+      - "${APP_PORT}:3000" # expose-to-the-world : only-in-the-docker
+    container_name: onus_be-${ENV}
+    depends_on: 
+      - onus_be_db
+    volumes: 
+      - .:/app
+      - /app/node_modules
+    command:
+          - /bin/sh
+          - -c
+          - |
+              npx typeorm -d dist/db/data-source.js migration:run
+              npm run start
+    networks:
+      - be_net
+
+volumes:
+  pgdata:
+  pgadmin-data:
+networks:
+    be_net:
+        driver: bridge
