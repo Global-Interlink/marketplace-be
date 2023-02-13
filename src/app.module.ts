@@ -30,7 +30,7 @@ import { CronModule } from './common/cron/cron.module';
     OrderModule,
     SaleItemModule,
     BidModule,
-    CronModule
+    CronModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,24 +1,20 @@
 import { User } from 'src/user/entities/user.entity';
-import { Collection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { IpfsService } from '../../../common/ipfs/ipfs.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { UpdateNftCollectionDto } from '../../dto/update-nft_collection.dto';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NFT } from 'src/nft_collection/entities/nft.entity';
 import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
 import { NftPropertyService } from '../nft_property/nft_property.service';
-import { NftPropertyType } from '../nft_property/nft_property.type';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { NFTCollection } from 'src/nft_collection/entities/nft_collection.entity';
 import { NftCollectionService } from '../nft_collection/nft_collection.service';
 import Web3 from 'web3';
+import * as ethUtil from 'ethereumjs-util';
 
 @Injectable()
 export class NftService {
   constructor(
-    private ipfsService: IpfsService,
-    private nftProperyService: NftPropertyService,
-    private nftCollectioService: NftCollectionService,
     @InjectRepository(NFT)
     private nftRepository: Repository<NFT>,
   ) {}
@@ -28,7 +24,7 @@ export class NftService {
     image: Express.Multer.File,
     creator: User,
   ) {
-    return "Not supported right now";
+    return 'Not supported right now';
   }
 
   findOne(id: string) {
@@ -39,8 +35,8 @@ export class NftService {
       relations: {
         saleItems: {
           auction: {
-            bids: true
-          }
+            bids: true,
+          },
         },
         owner: {
           address: true,
@@ -96,9 +92,8 @@ export class NftService {
     return `This action removes a #${id} nftCollection`;
   }
 
-  async sign_hash(inputHash: String, pkeyConfig: String) {
-    const ethUtil = require('ethereumjs-util');
-    var signature = { v: 0, r: '', s: '' };
+  async sign_hash(inputHash: string, pkeyConfig: string) {
+    const signature = { v: 0, r: '', s: '' };
     const signature_getting = ethUtil.ecsign(
       Buffer.from(inputHash, 'hex'),
       Buffer.from(pkeyConfig, 'hex'),
@@ -121,8 +116,8 @@ export class NftService {
 
     const maker_order_hash = Web3.utils.sha3(encode);
     const prefix_hash = Web3.utils.sha3(
-      process.env.PREFIX_DOMAIN + maker_order_hash!.slice(2),
+      process.env.PREFIX_DOMAIN + maker_order_hash?.slice(2),
     );
-    return prefix_hash!.slice(2);
+    return prefix_hash?.slice(2);
   }
 }
