@@ -1,5 +1,5 @@
 import { User } from 'src/user/entities/user.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NFT } from 'src/nft_collection/entities/nft.entity';
@@ -135,14 +135,18 @@ export class NftService {
       },
     });
 
-    const nftsCollection = await this.nftCollectionService.findOne(
-      collection.id,
-      {
-        nfts: true,
+    return await this.nftRepository.find({
+      relations: {
+        collection: true,
       },
-    );
-
-    return nftsCollection.nfts.filter((i) => i.id !== nftId).slice(0, 7);
+      where: {
+        id: Not(nftId),
+        collection: {
+          id: collection.id,
+        },
+      },
+      take: 8,
+    });
   }
 
   async getAllNftByUser(user: User) {
