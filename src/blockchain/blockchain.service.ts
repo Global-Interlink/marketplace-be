@@ -9,6 +9,8 @@ import Web3 from 'web3';
 import { IsNull, Not, Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
 import { Network } from './entities/network.entity';
+import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
+import { JsonRpcProvider } from '@mysten/sui.js';
 
 @UseInterceptors(SentryInterceptor)
 @Injectable()
@@ -51,10 +53,41 @@ export class BlockchainService {
 
   async verifyTransactionBuyByTxHash(txHash: string, chain: string) {
     const network = await this.getNetworkBychain(chain);
-    // todo: update here. verify txn 
+    // todo: update here. verify txn
   }
 
   async crawlData(network_id: string) {
     // todo: update here. sync event to db
+  }
+
+  async getNftsBySuiAccount(userAddress: string): Promise<NFTDto[]> {
+    const networkEnv = process.env.BLOCKCHAIN_NETWORK_ENV;
+    const provider = new JsonRpcProvider(networkEnv);
+    const objects = await provider.getObjectsOwnedByAddress(userAddress);
+    const detailOfObjects: any = await provider.getObjectBatch(
+      objects.map((x) => x.objectId),
+    );
+    const nftObjects = detailOfObjects.filter((x) => {
+      return (
+        x.status === 'Exists' &&
+        x.details?.data?.fields.name !== undefined &&
+        x.details?.data?.fields.url !== undefined
+      );
+    });
+    const result = nftObjects.map((nft) => {
+      return {
+        name: nft.details.data.fields.name,
+        description: nft.details.data.fields?.description,
+        url: nft.details.data.fields.url,
+        objectId: nft.details.data.fields.id.id,
+        owner: nft.details.owner.AddressOwner,
+      };
+    });
+    return result;
+  }
+
+  async getNftsByUserAddress(userAddress: string): Promise<NFTDto[]> {
+    const data = this.getNftsBySuiAccount(userAddress);
+    return data;
   }
 }

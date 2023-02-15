@@ -1,22 +1,23 @@
 import { User } from 'src/user/entities/user.entity';
 import { Repository } from 'typeorm';
-import { IpfsService } from '../../../common/ipfs/ipfs.service';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NFT } from 'src/nft_collection/entities/nft.entity';
 import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
-import { NftPropertyService } from '../nft_property/nft_property.service';
 import { paginate, Paginated, PaginateQuery } from 'nestjs-paginate';
 import { NFTCollection } from 'src/nft_collection/entities/nft_collection.entity';
 import { NftCollectionService } from '../nft_collection/nft_collection.service';
 import Web3 from 'web3';
 import * as ethUtil from 'ethereumjs-util';
+import { BlockchainService } from 'src/blockchain/blockchain.service';
 
 @Injectable()
 export class NftService {
   constructor(
     @InjectRepository(NFT)
     private nftRepository: Repository<NFT>,
+    private nftCollectionService: NftCollectionService,
+    private blockchainService: BlockchainService,
   ) {}
 
   async create(
@@ -119,5 +120,37 @@ export class NftService {
       process.env.PREFIX_DOMAIN + maker_order_hash?.slice(2),
     );
     return prefix_hash?.slice(2);
+  }
+
+  async findAllOtherNfts(nftId: string) {
+    const collection = await this.nftRepository.findOne({
+      where: { id: nftId },
+      relations: {
+        collection: true,
+      },
+      select: {
+        collection: {
+          id: true,
+        },
+      },
+    });
+
+    const nftsCollection = await this.nftCollectionService.findOne(
+      collection.id,
+      {
+        nfts: true,
+      },
+    );
+
+    return nftsCollection.nfts.filter((i) => i.id !== nftId).slice(0, 7);
+  }
+
+  async getAllNftByUser(user: User) {
+    const nfts = await this.blockchainService.getNftsByUserAddress(
+      user.address.address,
+    );
+    return {
+      result: nfts,
+    };
   }
 }

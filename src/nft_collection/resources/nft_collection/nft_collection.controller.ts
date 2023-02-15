@@ -72,18 +72,6 @@ export class NftCollectionController {
     return this.nftCollectionService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get(':id/nfts')
-  async findAllNftInCollection(@Param('id') id: string) {
-    return this.nftCollectionService.findAllNfts(id);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get(':id/nfts')
-  async findMyNfts(@Request() request, @Paginate() query: PaginateQuery) {
-    return this.nftCollectionService.findMyNfts(request.user, query);
-  }
-
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateNftCollectionDto: UpdateNftCollectionDto) {
   //   return this.nftCollectionService.update(+id, updateNftCollectionDto);

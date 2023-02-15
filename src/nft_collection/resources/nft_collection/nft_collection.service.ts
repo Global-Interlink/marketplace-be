@@ -1,6 +1,6 @@
 import { User } from 'src/user/entities/user.entity';
 import { NFTCollection } from './../../entities/nft_collection.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { IpfsService } from './../../../common/ipfs/ipfs.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateNftCollectionDto } from '../../dto/create-nft_collection.dto';
@@ -65,17 +65,12 @@ export class NftCollectionService {
     });
   }
 
-  findOne(id: string, relations: string[] = []) {
+  findOne(id: string, relations?: FindOptionsRelations<NFTCollection>) {
     return this.nftCollectionRepository.findOne({
       where: {
         id: id,
       },
-      //todo-hiep: sua relation sau
-      relations: {
-        creator: {
-          address: true,
-        },
-      },
+      relations,
     });
   }
 
@@ -97,30 +92,5 @@ export class NftCollectionService {
 
   remove(id: number) {
     return `This action removes a #${id} nftCollection`;
-  }
-
-  async findAllNfts(collectionId: string) {
-    const collection = await this.nftCollectionRepository.findOne({
-      relations: { nfts: true },
-      where: { id: collectionId },
-    });
-
-    return collection.nfts;
-  }
-
-  async findMyNfts(user: User, query: PaginateQuery) {
-    const queryBuilder = this.nftCollectionRepository
-      .createQueryBuilder('nft_collection')
-      .leftJoinAndSelect('nft_collection.nft_collection', 'creator')
-      .leftJoinAndSelect('nft_collection.nfts', 'nfts')
-      .where('creator.id = :userId', { userId: user.id })
-      .orderBy('nft_collection.createdDate', 'DESC');
-
-    return paginate(query, queryBuilder, {
-      sortableColumns: ['createdDate'],
-      nullSort: 'last',
-      defaultSortBy: [['createdDate', 'DESC']],
-      filterableColumns: {},
-    });
   }
 }

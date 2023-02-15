@@ -24,7 +24,7 @@ export class NFT extends BaseEntity {
   id: string;
 
   @Column({
-    nullable : true
+    nullable: true,
   })
   onChainId: number;
 
@@ -95,7 +95,10 @@ export class NFT extends BaseEntity {
           saleItemId: onSale.id,
           buyType: onSale.buy_type,
           auction: onSale.auction,
-          hasExpired: Boolean(onSale.buy_type == SaleItemBuyType.AUCTION && onSale.auction.expiredAt < new Date())
+          hasExpired: Boolean(
+            onSale.buy_type == SaleItemBuyType.AUCTION &&
+              onSale.auction.expiredAt < new Date(),
+          ),
         };
       }
     }
