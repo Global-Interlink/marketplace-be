@@ -18,7 +18,6 @@ import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
 import { NftCollectionService } from '../nft_collection/nft_collection.service';
 import { Paginate, PaginateQuery } from 'nestjs-paginate';
 
-
 @UseInterceptors(SentryInterceptor)
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('/api/v1/nft')
@@ -62,5 +61,17 @@ export class NftController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.nftService.findOne(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/others-in-collection')
+  async findOtherNftsInCollection(@Param('id') id: string) {
+    return this.nftService.findAllOtherNfts(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  findAllNftByUser(@Request() request) {
+    return this.nftService.getAllNftByUser(request.user);
   }
 }

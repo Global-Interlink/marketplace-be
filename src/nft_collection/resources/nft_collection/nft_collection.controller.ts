@@ -1,13 +1,21 @@
 import { SentryInterceptor } from './../../../sentry.interceptor';
 import { JwtAuthGuard } from './../../../auth/guards/jwt-auth.guard';
 import { NFTCollection } from './../../entities/nft_collection.entity';
-import { Controller, Get, Post, Body, Param, UseInterceptors, UploadedFiles, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseInterceptors,
+  UploadedFiles,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { NftCollectionService } from './nft_collection.service';
 import { CreateNftCollectionDto } from '../../dto/create-nft_collection.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate'
-
-
+import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
 @UseInterceptors(SentryInterceptor)
 @Controller('/api/v1/nft-collection')
 export class NftCollectionController {
@@ -15,18 +23,22 @@ export class NftCollectionController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([
+  @UseInterceptors(
+    FileFieldsInterceptor([
       { name: 'logo', maxCount: 1 },
       { name: 'banner', maxCount: 1 },
       { name: 'featuredImage', maxCount: 1 },
-    ])
+    ]),
   )
   async create(
     @Request() req,
     @Body() createNftCollectionDto: CreateNftCollectionDto,
-    @UploadedFiles() files: { 
-      logo?: Express.Multer.File, banner?: Express.Multer.File, featuredImage?: Express.Multer.File
-    }
+    @UploadedFiles()
+    files: {
+      logo?: Express.Multer.File;
+      banner?: Express.Multer.File;
+      featuredImage?: Express.Multer.File;
+    },
   ) {
     const logo = files.logo ? files.logo[0] : null;
     const banner = files.banner ? files.banner[0] : null;
@@ -37,7 +49,7 @@ export class NftCollectionController {
       logo,
       banner,
       featuredImage,
-      creator
+      creator,
     );
   }
 
@@ -50,7 +62,7 @@ export class NftCollectionController {
   @Get('/me')
   findAllMe(
     @Request() req,
-    @Paginate() query: PaginateQuery
+    @Paginate() query: PaginateQuery,
   ): Promise<Paginated<NFTCollection>> {
     return this.nftCollectionService.findAllByUser(query, req.user);
   }

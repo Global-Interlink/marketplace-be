@@ -1,6 +1,6 @@
 import { User } from 'src/user/entities/user.entity';
 import { NFTCollection } from './../../entities/nft_collection.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { IpfsService } from './../../../common/ipfs/ipfs.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateNftCollectionDto } from '../../dto/create-nft_collection.dto';
@@ -23,7 +23,7 @@ export class NftCollectionService {
     featuredImage: Express.Multer.File,
     creator: User,
   ) {
-    return "not supported right now";
+    return 'not supported right now';
   }
 
   findAll(query: PaginateQuery): Promise<Paginated<NFTCollection>> {
@@ -65,17 +65,12 @@ export class NftCollectionService {
     });
   }
 
-  findOne(id: string, relations: string[] = []) {
+  findOne(id: string, relations?: FindOptionsRelations<NFTCollection>) {
     return this.nftCollectionRepository.findOne({
       where: {
         id: id,
       },
-      //todo-hiep: sua relation sau
-      relations : {
-        creator: {
-          address : true
-        }
-      }
+      relations,
     });
   }
 

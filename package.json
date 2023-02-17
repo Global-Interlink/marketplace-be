@@ -25,6 +25,7 @@
     "migration:revert": "npm run typeorm -- migration:revert"
   },
   "dependencies": {
+    "@mysten/sui.js": "^0.26.1",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^9.0.0",
