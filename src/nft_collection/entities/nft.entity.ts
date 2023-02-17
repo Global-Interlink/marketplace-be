@@ -1,5 +1,4 @@
 import { Auction } from './../../marketplace/sale_item/entities/auction.entity';
-import { Bid } from './../../marketplace/bid/entities/bid.entity';
 import { SaleItemBuyType } from './../../marketplace/sale_item/sale_item.constants';
 import { NFTProperty } from './nft_property.entity';
 import { User } from '../../user/entities/user.entity';
@@ -10,7 +9,6 @@ import {
   AfterLoad,
   Column,
   Entity,
-  Generated,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,

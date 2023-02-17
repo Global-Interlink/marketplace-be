@@ -32,9 +32,7 @@ export class OrderService {
     );
     // validation
     if (saleItems.length < createOrderDto.saleItemIds.length) {
-      throw new BadRequestException(
-        'All sale items must be both on sale.',
-      );
+      throw new BadRequestException('All sale items must be both on sale.');
     }
 
     // Get total amount
@@ -80,5 +78,13 @@ export class OrderService {
 
   remove(id: number) {
     return `This action removes a #${id} order`;
+  }
+
+  async updateBuyer(nftId: string, buyer: User) {
+    const order = await this.orderRepository.findOne({
+      relations: { saleItems: { nft: true } },
+      where: { saleItems: { nft: { id: nftId } } },
+    });
+    return this.orderRepository.update({ id: order.id }, { buyer: buyer });
   }
 }

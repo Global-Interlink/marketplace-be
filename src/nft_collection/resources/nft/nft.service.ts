@@ -1,6 +1,6 @@
 import { User } from 'src/user/entities/user.entity';
 import { Not, Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NFT } from 'src/nft_collection/entities/nft.entity';
 import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
@@ -10,6 +10,9 @@ import { NftCollectionService } from '../nft_collection/nft_collection.service';
 import Web3 from 'web3';
 import * as ethUtil from 'ethereumjs-util';
 import { BlockchainService } from 'src/blockchain/blockchain.service';
+import { UserService } from 'src/user/user.service';
+import { UpdateFromBuyEventInputDto } from 'src/nft_collection/dto/common';
+import { OrderService } from 'src/marketplace/order/order.service';
 
 @Injectable()
 export class NftService {
@@ -18,6 +21,8 @@ export class NftService {
     private nftRepository: Repository<NFT>,
     private nftCollectionService: NftCollectionService,
     private blockchainService: BlockchainService,
+    private userService: UserService,
+    private orderService: OrderService,
   ) {}
 
   async create(
@@ -156,5 +161,28 @@ export class NftService {
     return {
       result: nfts,
     };
+  }
+
+  async updateFromBuyEvent(
+    id: string,
+    { txhash, chain }: UpdateFromBuyEventInputDto,
+  ) {
+    // verify
+    // update buy user ( owner )
+    const transaction = await this.blockchainService.getTransactionBuyByTxHash(
+      txhash,
+    );
+    if (transaction.effects.status.status === 'failure') {
+      throw new UnprocessableEntityException('Transaction is not success!');
+    }
+    const buyerAddress = (
+      transaction.effects.created[0].owner as { AddressOwner: string }
+    ).AddressOwner;
+
+    const buyer = await this.userService.findOneByWalletAddress(
+      buyerAddress,
+      chain,
+    );
+    return this.orderService.updateBuyer(id, buyer);
   }
 }

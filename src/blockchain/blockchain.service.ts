@@ -1,16 +1,11 @@
 import { SentryInterceptor } from './../sentry.interceptor';
-import {
-  BadRequestException,
-  Injectable,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Injectable, UseInterceptors } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import Web3 from 'web3';
-import { IsNull, Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
 import { Network } from './entities/network.entity';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
-import { JsonRpcProvider } from '@mysten/sui.js';
+import { JsonRpcProvider, SuiTransactionResponse } from '@mysten/sui.js';
 
 @UseInterceptors(SentryInterceptor)
 @Injectable()
@@ -89,5 +84,14 @@ export class BlockchainService {
   async getNftsByUserAddress(userAddress: string): Promise<NFTDto[]> {
     const data = this.getNftsBySuiAccount(userAddress);
     return data;
+  }
+
+  async getTransactionBuyByTxHash(
+    txHash: string,
+  ): Promise<SuiTransactionResponse> {
+    const networkEnv = process.env.BLOCKCHAIN_NETWORK_ENV;
+    const provider = new JsonRpcProvider(networkEnv);
+    const transaction = await provider.getTransactionWithEffects(txHash);
+    return transaction;
   }
 }
