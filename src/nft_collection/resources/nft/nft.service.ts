@@ -13,6 +13,7 @@ import { BlockchainService } from 'src/blockchain/blockchain.service';
 import { UserService } from 'src/user/user.service';
 import { UpdateFromBuyEventInputDto } from 'src/nft_collection/dto/common';
 import { OrderService } from 'src/marketplace/order/order.service';
+import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 
 @Injectable()
 export class NftService {
@@ -23,6 +24,7 @@ export class NftService {
     private blockchainService: BlockchainService,
     private userService: UserService,
     private orderService: OrderService,
+    private saleItemService: SaleItemService,
   ) {}
 
   async create(
@@ -169,6 +171,7 @@ export class NftService {
   ) {
     // verify
     // update buy user ( owner )
+    // create order
     const transaction = await this.blockchainService.getTransactionBuyByTxHash(
       txhash,
     );
@@ -183,6 +186,7 @@ export class NftService {
       buyerAddress,
       chain,
     );
-    return this.orderService.updateBuyer(id, buyer);
+    const saleItem = await this.saleItemService.findOneOnSaleByNftId(id);
+    return this.orderService.create({ saleItemIds: [saleItem.id] }, buyer);
   }
 }

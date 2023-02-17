@@ -79,12 +79,4 @@ export class OrderService {
   remove(id: number) {
     return `This action removes a #${id} order`;
   }
-
-  async updateBuyer(nftId: string, buyer: User) {
-    const order = await this.orderRepository.findOne({
-      relations: { saleItems: { nft: true } },
-      where: { saleItems: { nft: { id: nftId } } },
-    });
-    return this.orderRepository.update({ id: order.id }, { buyer: buyer });
-  }
 }
