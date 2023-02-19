@@ -43,18 +43,6 @@ export class AuthService {
         user.address.address,
         user.address.network.network_id,
       );
-
-      const recoverMessage = utils.verifyMessage(
-        signMessage.message,
-        signature,
-      );
-
-      if (
-        !recoverMessage ||
-        user.address.address.toLowerCase() != recoverMessage.toLowerCase()
-      ) {
-        throw 'Invalid signature';
-      }
       return {
         success: true,
       };
