@@ -33,11 +33,11 @@ export class User extends BaseEntity {
   messages: SignMessage[];
 
   @OneToMany(() => SaleItem, (saleItem) => saleItem.publishedBy)
-  publishedSaleItems: SaleItem[]
+  publishedSaleItems: SaleItem[];
 
   @OneToMany(() => Order, (order) => order.buyer)
-  orders: Order[]
+  orders: Order[];
 
   @OneToMany(() => Bid, (bid) => bid.user)
-  bids: Bid[]
+  bids: Bid[];
 }

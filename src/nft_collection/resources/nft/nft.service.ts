@@ -143,7 +143,7 @@ export class NftService {
       },
     });
 
-    return await this.nftRepository.find({
+    const data = await this.nftRepository.find({
       relations: {
         collection: true,
       },
@@ -155,6 +155,7 @@ export class NftService {
       },
       take: 8,
     });
+    return { data };
   }
 
   async getAllNftByUser(user: User) {

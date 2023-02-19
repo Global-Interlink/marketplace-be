@@ -1,4 +1,8 @@
+import AdminJS from 'adminjs';
 import { Module } from '@nestjs/common';
+import { AdminModule } from '@adminjs/nestjs';
+import { Database, Resource } from '@adminjs/typeorm';
+import { validate } from 'class-validator';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
@@ -14,6 +18,8 @@ import { BidModule } from './marketplace/bid/bid.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './common/cron/cron.module';
 
+Resource.validate = validate;
+AdminJS.registerAdapter({ Database, Resource });
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,7 +27,6 @@ import { CronModule } from './common/cron/cron.module';
       cache: true,
     }),
     ScheduleModule.forRoot(),
-    // DatabaseModule,
     TypeOrmModule.forRoot(dataSourceOptions),
     UserModule,
     BlockchainModule,
@@ -31,6 +36,12 @@ import { CronModule } from './common/cron/cron.module';
     SaleItemModule,
     BidModule,
     CronModule,
+    AdminModule.createAdmin({
+      adminJsOptions: {
+        rootPath: '/admin',
+        resources: [],
+      },
+    }),
   ],
   controllers: [AppController],
   providers: [AppService],
