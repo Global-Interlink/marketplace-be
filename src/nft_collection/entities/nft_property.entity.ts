@@ -13,6 +13,9 @@ export class NFTProperty extends BaseEntity {
     @Column()
     value: string
 
+    @Column({type: 'uuid', nullable: false })
+    nftId!: string;
+
     @ManyToOne(() => NFT, (nft) => nft.properties)
     nft: NFT
 }
