@@ -14,6 +14,8 @@ import { UserService } from 'src/user/user.service';
 import { UpdateFromBuyEventInputDto } from 'src/nft_collection/dto/common';
 import { OrderService } from 'src/marketplace/order/order.service';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
+import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
+import { NftPropertyService } from '../nft_property/nft_property.service';
 
 @Injectable()
 export class NftService {
@@ -25,6 +27,7 @@ export class NftService {
     private userService: UserService,
     private orderService: OrderService,
     private saleItemService: SaleItemService,
+    private nftPropertyService: NftPropertyService,
   ) {}
 
   async create(
@@ -150,7 +153,7 @@ export class NftService {
       where: {
         id: Not(nftId),
         collection: {
-          id: collection.id,
+          id: collection.collection.id,
         },
       },
       take: 8,
@@ -158,10 +161,30 @@ export class NftService {
     return { data };
   }
 
+  async saveNftFromChain(nft: NFTDto, user: User) {
+    const existed = await this.nftRepository.findOne({
+      where: { onChainId: nft.objectId },
+    });
+    if (existed) {
+      return;
+    }
+    return await this.nftRepository.save({
+      name: nft.name,
+      onChainId: nft.objectId,
+      owner: user,
+      description: nft.description,
+      nftType: nft.nftType,
+      image: nft.url,
+    });
+  }
+
   async getAllNftByUser(user: User) {
     const nfts = await this.blockchainService.getNftsByUserAddress(
       user.address.address,
     );
+
+    await Promise.all(nfts.map((i) => this.saveNftFromChain(i, user)));
+
     return {
       result: nfts,
     };

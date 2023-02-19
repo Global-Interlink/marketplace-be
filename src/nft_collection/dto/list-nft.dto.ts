@@ -4,4 +4,5 @@ export class NFTDto {
   url: string;
   objectId: string;
   owner: string;
+  nftType: string;
 }
