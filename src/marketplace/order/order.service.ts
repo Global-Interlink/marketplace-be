@@ -32,9 +32,7 @@ export class OrderService {
     );
     // validation
     if (saleItems.length < createOrderDto.saleItemIds.length) {
-      throw new BadRequestException(
-        'All sale items must be both on sale.',
-      );
+      throw new BadRequestException('All sale items must be both on sale.');
     }
 
     // Get total amount

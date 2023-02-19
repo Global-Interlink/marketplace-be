@@ -17,6 +17,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
 import { NftCollectionService } from '../nft_collection/nft_collection.service';
 import { Paginate, PaginateQuery } from 'nestjs-paginate';
+import { UpdateFromBuyEventInputDto } from 'src/nft_collection/dto/common';
 
 @UseInterceptors(SentryInterceptor)
 @UseInterceptors(ClassSerializerInterceptor)
@@ -73,5 +74,14 @@ export class NftController {
   @Get()
   findAllNftByUser(@Request() request) {
     return this.nftService.getAllNftByUser(request.user);
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  @Post(':id/update-from-buy-event')
+  updateFromBuyEvent(
+    @Param('id') id: string,
+    @Body() body: UpdateFromBuyEventInputDto,
+  ) {
+    return this.nftService.updateFromBuyEvent(id, body);
   }
 }

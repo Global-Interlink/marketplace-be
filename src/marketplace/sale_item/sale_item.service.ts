@@ -81,6 +81,20 @@ export class SaleItemService {
     });
   }
 
+  async findOneOnSaleByNftId(nftId: string) {
+    return await this.saleItemRepository.findOne({
+      relations: {
+        nft: true,
+      },
+      where: {
+        nft: {
+          id: nftId,
+        },
+        state: In([SaleItemState.ON_SALE, SaleItemState.VERIFING]),
+      },
+    });
+  }
+
   findOne(id: string) {
     return this.saleItemRepository.findOne({
       where: {
