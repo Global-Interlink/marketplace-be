@@ -60,7 +60,7 @@ export class NftService {
     const queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.owner', 'owner')
-      .leftJoinAndSelect('creator.address', 'address')
+//       .leftJoinAndSelect('creator.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
       .where('nfts.collectionId = :collectionId', { collectionId })
       .orderBy('nfts.createdDate', 'DESC');
