@@ -64,7 +64,6 @@ export class NftController {
     return await this.nftService.findOne(id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id/others-in-collection')
   async findOtherNftsInCollection(@Param('id') id: string) {
     return this.nftService.findAllOtherNfts(id);
