@@ -15,6 +15,9 @@ export class Address extends BaseEntity {
     })
     address: string
 
+    @Column({type: 'uuid', nullable: false })
+    networkId!: string;
+
     @ManyToOne(() => Network, (network) => network.addresses)
     network: Network
 

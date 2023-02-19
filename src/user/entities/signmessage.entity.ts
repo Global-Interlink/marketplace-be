@@ -12,6 +12,9 @@ export class SignMessage extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({type: 'uuid', nullable: false })
+  userId!: string;
+
   @ManyToOne(() => User, (user) => user.messages)
   user: User;
 

@@ -13,6 +13,7 @@ import { SaleItemModule } from './marketplace/sale_item/sale_item.module';
 import { BidModule } from './marketplace/bid/bid.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './common/cron/cron.module';
+import { AdminConfigModule } from './admin-config.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CronModule } from './common/cron/cron.module';
     ScheduleModule.forRoot(),
     // DatabaseModule,
     TypeOrmModule.forRoot(dataSourceOptions),
+    AdminConfigModule,
     UserModule,
     BlockchainModule,
     NftCollectionModule,
