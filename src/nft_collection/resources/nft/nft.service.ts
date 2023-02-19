@@ -83,6 +83,7 @@ export class NftService {
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')
       .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('owner.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
       .where('nfts.ownerId = :userId', { userId })
       .orderBy('nfts.createdDate', 'DESC');
