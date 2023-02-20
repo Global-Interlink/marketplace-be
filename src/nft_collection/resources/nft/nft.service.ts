@@ -1,6 +1,10 @@
 import { User } from 'src/user/entities/user.entity';
 import { In, Not, Repository } from 'typeorm';
-import { Injectable, UnprocessableEntityException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NFT } from 'src/nft_collection/entities/nft.entity';
 import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
@@ -234,6 +238,12 @@ export class NftService {
     const listEvent = transaction.effects.events.find((i: any) =>
       (i?.moveEvent?.type || '').includes('marketplace::ListEvent'),
     );
+
+    if (!listEvent) {
+      throw new BadRequestException(
+        'This is not transaction id of list event!',
+      );
+    }
     return await this.saleItemService.create(
       {
         signature: null,
@@ -265,5 +275,37 @@ export class NftService {
       defaultSortBy: [['id', 'DESC']],
       filterableColumns: {},
     });
+  }
+
+  async updateDelistEvent(
+    id: string,
+    { txhash }: UpdatePutOnSaleEventBodyDto,
+    user: User,
+  ) {
+    const transaction: any =
+      await this.blockchainService.getTransactionBuyByTxHash(txhash);
+    const delistEvent = transaction.effects.events.find((i: any) =>
+      (i?.moveEvent?.type || '').includes('marketplace::DelistEvent'),
+    );
+    if (!delistEvent) {
+      throw new BadRequestException(
+        'This is not transaction id of delist event!',
+      );
+    }
+
+    const nft = await this.nftRepository.findOne({
+      relations: { saleItems: true, owner: true },
+      where: {
+        id,
+        saleItems: {
+          state: SaleItemState.ON_SALE,
+        },
+        owner: {
+          id: user.id,
+        },
+      },
+    });
+
+    return await this.saleItemService.cancel(nft.saleItems[0], user);
   }
 }

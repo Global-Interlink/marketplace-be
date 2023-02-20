@@ -101,8 +101,8 @@ export class SaleItemService {
         id: id,
       },
       relations: {
-        publishedBy: true
-      }
+        publishedBy: true,
+      },
     });
   }
 
@@ -138,7 +138,10 @@ export class SaleItemService {
   }
 
   async cancel(saleItem: SaleItem, user: User) {
-    if (saleItem.publishedBy.id != user.id) {
+    if (
+      saleItem?.publishedBy?.id != user.id &&
+      saleItem?.publishedById != user.id
+    ) {
       throw new BadRequestException('Sale item is not created by you');
     }
     if (saleItem.state != SaleItemState.ON_SALE) {
