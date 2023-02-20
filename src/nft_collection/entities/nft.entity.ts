@@ -71,7 +71,9 @@ export class NFT extends BaseEntity {
   })
   ownedDate: Date;
 
-  @Column()
+  @Column({
+    nullable: true
+  })
   nftType: string;
 
   @Exclude()
