@@ -87,11 +87,13 @@ export class NftController {
     return this.nftService.updateFromBuyEvent(id, body);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post(':id/update-put-on-sale-event')
   updatePutOnSaleEvent(
     @Param('id') id: string,
     @Body() body: UpdatePutOnSaleEventBodyDto,
+    @Request() req,
   ) {
-    return this.nftService.updatePutOnSaleEvent(id, body);
+    return this.nftService.updatePutOnSaleEvent(id, body, req.user);
   }
 }

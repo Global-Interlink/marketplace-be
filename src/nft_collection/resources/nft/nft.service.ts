@@ -19,6 +19,7 @@ import { OrderService } from 'src/marketplace/order/order.service';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { NftPropertyService } from '../nft_property/nft_property.service';
+import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
 
 @Injectable()
 export class NftService {
@@ -172,7 +173,6 @@ export class NftService {
       return;
     }
 
-    // Price * 10^ 9
     return await this.nftRepository.save({
       name: nft.name,
       onChainId: nft.objectId,
@@ -222,13 +222,27 @@ export class NftService {
 
   async updatePutOnSaleEvent(
     id: string,
-    { txhash, chain }: UpdatePutOnSaleEventBodyDto,
+    { txhash }: UpdatePutOnSaleEventBodyDto,
+    user: User,
   ) {
-    const transaction = await this.blockchainService.getTransactionBuyByTxHash(
-      txhash,
-    );
+    const nft = await this.findOne(id);
+    const transaction: any =
+      await this.blockchainService.getTransactionBuyByTxHash(txhash);
 
-    return transaction;
-    // await this.saleItemService.create({signature: transaction.certificate.txSignature, nftId:id, auction: {expiredAt}  })
+    const listEvent = transaction.effects.events.find((i: any) =>
+      (i?.moveEvent?.type || '').includes('marketplace::ListEvent'),
+    );
+    return await this.saleItemService.create(
+      {
+        signature: null,
+        nftId: id,
+        auction: null,
+        clientId: null,
+        buyType: SaleItemBuyType.BUY_NOW,
+        price: Number(listEvent?.moveEvent?.fields?.price) / Math.pow(10, 9),
+      },
+      nft,
+      user,
+    );
   }
 }
