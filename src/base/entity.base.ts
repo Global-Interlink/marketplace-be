@@ -1,6 +1,7 @@
 import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { BaseEntity as TypeOrmBaseEntity } from 'typeorm';
 
-export class BaseEntity {
+export class BaseEntity extends TypeOrmBaseEntity {
   @CreateDateColumn()
   createdDate: Date;
 

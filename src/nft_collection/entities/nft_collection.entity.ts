@@ -15,6 +15,9 @@ export class NFTCollection extends BaseEntity {
     @Column()
     description: string
 
+    @Column({type: 'uuid', nullable: false })
+    categoryId!: string;
+
     @ManyToOne(() => Category, (category) => category.collections, {
         nullable: true
     })
@@ -47,6 +50,9 @@ export class NFTCollection extends BaseEntity {
 
     @OneToMany(() => NFT, (nft) => nft.collection)
     nfts: NFT[]
+
+    @Column({type: 'uuid', nullable: false })
+    creatorId!: string;
 
     @ManyToOne(() => User, (user) => user.collections)
     creator: User

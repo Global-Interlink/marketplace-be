@@ -52,11 +52,17 @@ export class NFT extends BaseEntity {
   })
   state: NFTState;
 
+  @Column({type: 'uuid', nullable: false })
+  collectionId!: string;
+
   @ManyToOne(() => NFTCollection, (nftCollection) => nftCollection.nfts, {
     nullable: true,
   })
   collection: NFTCollection;
 
+  @Column({type: 'uuid', nullable: false })
+  ownerId!: string;
+  
   @ManyToOne(() => User, (user) => user.ownedNfts)
   owner: User;
 

@@ -134,7 +134,7 @@ export class NftService {
   }
 
   async findAllOtherNfts(nftId: string) {
-    const collection = await this.nftRepository.findOne({
+    const nft = await this.nftRepository.findOne({
       where: { id: nftId },
       relations: {
         collection: true,
@@ -153,7 +153,7 @@ export class NftService {
       where: {
         id: Not(nftId),
         collection: {
-          id: collection.collection.id,
+          id: nft.collection.id,
         },
       },
       take: 8,
@@ -161,7 +161,7 @@ export class NftService {
     return { data };
   }
 
-  async saveNftFromChain(nft: NFTDto, user: User) {
+  async saveNftFromOnChainData(nft: NFTDto, user: User) {
     const existed = await this.nftRepository.findOne({
       where: { onChainId: nft.objectId },
     });
@@ -183,7 +183,7 @@ export class NftService {
       user.address.address,
     );
 
-    await Promise.all(nfts.map((i) => this.saveNftFromChain(i, user)));
+    await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
 
     return {
       result: nfts,

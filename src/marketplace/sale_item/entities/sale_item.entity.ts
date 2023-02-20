@@ -35,6 +35,9 @@ export class SaleItem extends BaseEntity {
     @JoinColumn()
     auction: Auction
 
+    @Column({type: 'uuid', nullable: false })
+    nftId!: string;
+
     @ManyToOne(() => NFT, (nft) => nft.saleItems)
     nft: NFT
 
@@ -54,8 +57,14 @@ export class SaleItem extends BaseEntity {
     })
     lastChangedStateAt: Date
 
+    @Column({type: 'uuid', nullable: false })
+    publishedById!: string;
+
     @ManyToOne(() => User, (user) => user.publishedSaleItems)
     publishedBy: User
+
+    @Column({type: 'uuid', nullable: false })
+    orderId!: string;
 
     @ManyToOne(() => Order, (order) => order.saleItems)
     order: Order

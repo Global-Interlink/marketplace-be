@@ -10,6 +10,7 @@ import {
   OneToOne,
   JoinColumn,
   OneToMany,
+  Column,
 } from 'typeorm';
 import { SignMessage } from './signmessage.entity';
 import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
@@ -18,6 +19,9 @@ import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
 export class User extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({type: 'uuid', nullable: false })
+  addressId!: string;
 
   @OneToOne(() => Address, (address) => address.user)
   @JoinColumn()

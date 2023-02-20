@@ -17,6 +17,7 @@ import { SaleItemModule } from './marketplace/sale_item/sale_item.module';
 import { BidModule } from './marketplace/bid/bid.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CronModule } from './common/cron/cron.module';
+import { AdminConfigModule } from './admin-config.module';
 
 Resource.validate = validate;
 AdminJS.registerAdapter({ Database, Resource });
@@ -28,6 +29,7 @@ AdminJS.registerAdapter({ Database, Resource });
     }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(dataSourceOptions),
+    AdminConfigModule,
     UserModule,
     BlockchainModule,
     NftCollectionModule,
