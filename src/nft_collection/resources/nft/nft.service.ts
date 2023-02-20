@@ -11,7 +11,10 @@ import Web3 from 'web3';
 import * as ethUtil from 'ethereumjs-util';
 import { BlockchainService } from 'src/blockchain/blockchain.service';
 import { UserService } from 'src/user/user.service';
-import { UpdateFromBuyEventInputDto } from 'src/nft_collection/dto/common';
+import {
+  UpdateFromBuyEventInputDto,
+  UpdatePutOnSaleEventBodyDto,
+} from 'src/nft_collection/dto/common';
 import { OrderService } from 'src/marketplace/order/order.service';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
@@ -168,6 +171,8 @@ export class NftService {
     if (existed) {
       return;
     }
+
+    // Price * 10^ 9
     return await this.nftRepository.save({
       name: nft.name,
       onChainId: nft.objectId,
@@ -213,5 +218,17 @@ export class NftService {
     );
     const saleItem = await this.saleItemService.findOneOnSaleByNftId(id);
     return this.orderService.create({ saleItemIds: [saleItem.id] }, buyer);
+  }
+
+  async updatePutOnSaleEvent(
+    id: string,
+    { txhash, chain }: UpdatePutOnSaleEventBodyDto,
+  ) {
+    const transaction = await this.blockchainService.getTransactionBuyByTxHash(
+      txhash,
+    );
+
+    return transaction;
+    // await this.saleItemService.create({signature: transaction.certificate.txSignature, nftId:id, auction: {expiredAt}  })
   }
 }

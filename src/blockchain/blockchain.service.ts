@@ -69,6 +69,7 @@ export class BlockchainService {
         x.details?.data?.fields.url !== undefined
       );
     });
+    console.log(JSON.stringify(nftObjects));
     const result = nftObjects.map((nft) => {
       return {
         name: nft.details.data.fields.name,
