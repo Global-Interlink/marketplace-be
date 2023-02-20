@@ -17,7 +17,10 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
 import { NftCollectionService } from '../nft_collection/nft_collection.service';
 import { Paginate, PaginateQuery } from 'nestjs-paginate';
-import { UpdateFromBuyEventInputDto } from 'src/nft_collection/dto/common';
+import {
+  UpdateFromBuyEventInputDto,
+  UpdatePutOnSaleEventBodyDto,
+} from 'src/nft_collection/dto/common';
 
 @UseInterceptors(SentryInterceptor)
 @UseInterceptors(ClassSerializerInterceptor)
@@ -59,6 +62,12 @@ export class NftController {
     return await this.nftService.findAllByUser(query, req.user);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('listed-on-market')
+  getMyNftsListedOnMarket(@Request() req, @Paginate() query: PaginateQuery) {
+    return this.nftService.getMyNftsListedOnMarket(req.user, query);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.nftService.findOne(id);
@@ -82,5 +91,15 @@ export class NftController {
     @Body() body: UpdateFromBuyEventInputDto,
   ) {
     return this.nftService.updateFromBuyEvent(id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/update-put-on-sale-event')
+  updatePutOnSaleEvent(
+    @Param('id') id: string,
+    @Body() body: UpdatePutOnSaleEventBodyDto,
+    @Request() req,
+  ) {
+    return this.nftService.updatePutOnSaleEvent(id, body, req.user);
   }
 }

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 
 export class UpdateFromBuyEventInputDto {
   @ApiProperty()
@@ -7,3 +7,7 @@ export class UpdateFromBuyEventInputDto {
   @ApiProperty()
   chain: string;
 }
+
+export class UpdatePutOnSaleEventBodyDto extends PartialType(
+  UpdateFromBuyEventInputDto,
+) {}

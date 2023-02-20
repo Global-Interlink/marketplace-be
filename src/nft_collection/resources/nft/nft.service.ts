@@ -1,5 +1,5 @@
 import { User } from 'src/user/entities/user.entity';
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NFT } from 'src/nft_collection/entities/nft.entity';
@@ -11,11 +11,16 @@ import Web3 from 'web3';
 import * as ethUtil from 'ethereumjs-util';
 import { BlockchainService } from 'src/blockchain/blockchain.service';
 import { UserService } from 'src/user/user.service';
-import { UpdateFromBuyEventInputDto } from 'src/nft_collection/dto/common';
+import {
+  UpdateFromBuyEventInputDto,
+  UpdatePutOnSaleEventBodyDto,
+} from 'src/nft_collection/dto/common';
 import { OrderService } from 'src/marketplace/order/order.service';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { NftPropertyService } from '../nft_property/nft_property.service';
+import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
+import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
 @Injectable()
 export class NftService {
@@ -166,8 +171,9 @@ export class NftService {
       where: { onChainId: nft.objectId },
     });
     if (existed) {
-      return;
+      return existed;
     }
+
     return await this.nftRepository.save({
       name: nft.name,
       onChainId: nft.objectId,
@@ -183,10 +189,11 @@ export class NftService {
       user.address.address,
     );
 
-    await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
-
+    const savedNfts = await Promise.all(
+      nfts.map((i) => this.saveNftFromOnChainData(i, user)),
+    );
     return {
-      result: nfts,
+      result: savedNfts,
     };
   }
 
@@ -213,5 +220,50 @@ export class NftService {
     );
     const saleItem = await this.saleItemService.findOneOnSaleByNftId(id);
     return this.orderService.create({ saleItemIds: [saleItem.id] }, buyer);
+  }
+
+  async updatePutOnSaleEvent(
+    id: string,
+    { txhash }: UpdatePutOnSaleEventBodyDto,
+    user: User,
+  ) {
+    const nft = await this.findOne(id);
+    const transaction: any =
+      await this.blockchainService.getTransactionBuyByTxHash(txhash);
+
+    const listEvent = transaction.effects.events.find((i: any) =>
+      (i?.moveEvent?.type || '').includes('marketplace::ListEvent'),
+    );
+    return await this.saleItemService.create(
+      {
+        signature: null,
+        nftId: id,
+        auction: null,
+        clientId: null,
+        buyType: SaleItemBuyType.BUY_NOW,
+        price: Number(listEvent?.moveEvent?.fields?.price) / Math.pow(10, 9),
+      },
+      nft,
+      user,
+    );
+  }
+
+  async getMyNftsListedOnMarket(user: User, query: PaginateQuery) {
+    const userId = user.id;
+    const queryBuilder = this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
+      .leftJoinAndSelect('nfts.owner', 'owner')
+      .where('nfts.ownerId = :userId', { userId })
+      .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
+      .orderBy('nfts.createdDate', 'DESC');
+
+    return paginate(query, queryBuilder, {
+      sortableColumns: ['createdDate'],
+      nullSort: 'last',
+      searchableColumns: ['name', 'description'],
+      defaultSortBy: [['id', 'DESC']],
+      filterableColumns: {},
+    });
   }
 }

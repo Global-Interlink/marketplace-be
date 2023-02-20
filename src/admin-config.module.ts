@@ -35,8 +35,8 @@ AdminJS.registerAdapter({
   imports: [
     AdminModule.createAdminAsync({
       useFactory: () => ({
-        adminJsOptions: { 
-          rootPath: '/admin', 
+        adminJsOptions: {
+          rootPath: '/admin',
           resources: [
             Category,
             NFTCollection,
@@ -51,7 +51,7 @@ AdminJS.registerAdapter({
                     isTitle: 'true',
                   },
                 },
-              }
+              },
             },
             {
               resource: Network,
@@ -61,7 +61,7 @@ AdminJS.registerAdapter({
                     isTitle: 'true',
                   },
                 },
-              }
+              },
             },
             {
               resource: Order,
@@ -71,7 +71,7 @@ AdminJS.registerAdapter({
                     isTitle: 'true',
                   },
                 },
-              }
+              },
             },
             {
               resource: SaleItem,
@@ -81,7 +81,7 @@ AdminJS.registerAdapter({
                     isTitle: 'true',
                   },
                 },
-              }
+              },
             },
             {
               resource: Auction,
@@ -91,9 +91,8 @@ AdminJS.registerAdapter({
                     isTitle: 'true',
                   },
                 },
-              }
+              },
             },
-
           ],
         },
         auth: {
