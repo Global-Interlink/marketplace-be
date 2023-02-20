@@ -1,5 +1,5 @@
 import { User } from 'src/user/entities/user.entity';
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NFT } from 'src/nft_collection/entities/nft.entity';
@@ -20,6 +20,7 @@ import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { NftPropertyService } from '../nft_property/nft_property.service';
 import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
+import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
 @Injectable()
 export class NftService {
@@ -170,7 +171,7 @@ export class NftService {
       where: { onChainId: nft.objectId },
     });
     if (existed) {
-      return;
+      return existed;
     }
 
     return await this.nftRepository.save({
@@ -188,10 +189,11 @@ export class NftService {
       user.address.address,
     );
 
-    await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
-
+    const savedNfts = await Promise.all(
+      nfts.map((i) => this.saveNftFromOnChainData(i, user)),
+    );
     return {
-      result: nfts,
+      result: savedNfts,
     };
   }
 
@@ -244,5 +246,24 @@ export class NftService {
       nft,
       user,
     );
+  }
+
+  async getMyNftsListedOnMarket(user: User, query: PaginateQuery) {
+    const userId = user.id;
+    const queryBuilder = this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
+      .leftJoinAndSelect('nfts.owner', 'owner')
+      .where('nfts.ownerId = :userId', { userId })
+      .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
+      .orderBy('nfts.createdDate', 'DESC');
+
+    return paginate(query, queryBuilder, {
+      sortableColumns: ['createdDate'],
+      nullSort: 'last',
+      searchableColumns: ['name', 'description'],
+      defaultSortBy: [['id', 'DESC']],
+      filterableColumns: {},
+    });
   }
 }

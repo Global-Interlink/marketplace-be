@@ -62,6 +62,12 @@ export class NftController {
     return await this.nftService.findAllByUser(query, req.user);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('listed-on-market')
+  getMyNftsListedOnMarket(@Request() req, @Paginate() query: PaginateQuery) {
+    return this.nftService.getMyNftsListedOnMarket(req.user, query);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return await this.nftService.findOne(id);
