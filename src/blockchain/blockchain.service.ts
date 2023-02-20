@@ -76,6 +76,7 @@ export class BlockchainService {
         url: nft.details.data.fields.url,
         objectId: nft.details.data.fields.id.id,
         owner: nft.details.owner.AddressOwner,
+        nftType: nft.details.data.type,
       };
     });
     return result;

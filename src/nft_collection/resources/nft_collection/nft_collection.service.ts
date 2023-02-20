@@ -32,6 +32,7 @@ export class NftCollectionService {
       .leftJoinAndSelect('collections.creator', 'creator')
       .leftJoinAndSelect('creator.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
+      .loadRelationCountAndMap('collections.totalNft', 'collections.nfts')
       .orderBy('collections.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
@@ -72,6 +73,14 @@ export class NftCollectionService {
       },
       relations,
     });
+  }
+
+  getDetailCollection(id: string) {
+    return this.nftCollectionRepository
+      .createQueryBuilder('collections')
+      .loadRelationCountAndMap('collections.totalNft', 'collections.nfts')
+      .where('collections.id = :id', { id })
+      .getOne();
   }
 
   findOneByUser(id: string, user: User) {

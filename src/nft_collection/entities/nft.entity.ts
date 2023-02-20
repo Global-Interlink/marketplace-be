@@ -24,7 +24,7 @@ export class NFT extends BaseEntity {
   @Column({
     nullable: true,
   })
-  onChainId: number;
+  onChainId: string;
 
   @Column()
   name: string;
@@ -70,6 +70,9 @@ export class NFT extends BaseEntity {
     nullable: true,
   })
   ownedDate: Date;
+
+  @Column()
+  nftType: string;
 
   @Exclude()
   @OneToMany(() => SaleItem, (saleItem) => saleItem.nft)
