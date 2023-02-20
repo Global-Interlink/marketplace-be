@@ -11,3 +11,7 @@ export class UpdateFromBuyEventInputDto {
 export class UpdatePutOnSaleEventBodyDto extends PartialType(
   UpdateFromBuyEventInputDto,
 ) {}
+
+export class UpdateDelistEventBodyDto extends PartialType(
+  UpdateFromBuyEventInputDto,
+) {}

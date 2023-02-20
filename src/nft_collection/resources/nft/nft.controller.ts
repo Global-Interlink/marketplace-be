@@ -18,6 +18,7 @@ import { CreateNftDto } from 'src/nft_collection/dto/create-nft.dto';
 import { NftCollectionService } from '../nft_collection/nft_collection.service';
 import { Paginate, PaginateQuery } from 'nestjs-paginate';
 import {
+  UpdateDelistEventBodyDto,
   UpdateFromBuyEventInputDto,
   UpdatePutOnSaleEventBodyDto,
 } from 'src/nft_collection/dto/common';
@@ -101,5 +102,15 @@ export class NftController {
     @Request() req,
   ) {
     return this.nftService.updatePutOnSaleEvent(id, body, req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/update-delist-event')
+  updateDelistEvent(
+    @Param('id') id: string,
+    @Body() body: UpdateDelistEventBodyDto,
+    @Request() req,
+  ) {
+    return this.nftService.updateDelistEvent(id, body, req.user);
   }
 }
