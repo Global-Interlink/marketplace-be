@@ -74,7 +74,9 @@ export class NftService {
       .leftJoinAndSelect('nfts.owner', 'owner')
       .leftJoinAndSelect('owner.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('nfts.collectionId = :collectionId', { collectionId })
+      .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
@@ -158,11 +160,15 @@ export class NftService {
     const data = await this.nftRepository.find({
       relations: {
         collection: true,
+        saleItems: true,
       },
       where: {
         id: Not(nftId),
         collection: {
           id: nft.collection.id,
+        },
+        saleItems: {
+          state: SaleItemState.ON_SALE,
         },
       },
       take: 8,
