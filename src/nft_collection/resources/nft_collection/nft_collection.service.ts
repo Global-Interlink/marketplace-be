@@ -40,7 +40,7 @@ export class NftCollectionService {
     const pagingData = await paginate(query, queryBuilder, {
       sortableColumns: ['createdDate'],
       nullSort: 'last',
-      searchableColumns: ['name', 'description'],
+      searchableColumns: ['name', 'creatorId'],
       defaultSortBy: [['id', 'DESC']],
       filterableColumns: {},
     });

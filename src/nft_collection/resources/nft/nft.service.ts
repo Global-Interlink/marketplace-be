@@ -220,9 +220,14 @@ export class NftService {
     if (transaction.effects.status.status === 'failure') {
       throw new UnprocessableEntityException('Transaction is not success!');
     }
-    const buyerAddress = (
-      transaction.effects.created[0].owner as { AddressOwner: string }
-    ).AddressOwner;
+    const buyEvent: any = transaction.effects.events.find((i: any) =>
+      (i?.moveEvent?.type || '').includes('marketplace::BuyEvent'),
+    );
+
+    if (!buyEvent) {
+      throw new BadRequestException('This is not transaction id of buy event!');
+    }
+    const buyerAddress = buyEvent?.moveEvent?.fields?.actor;
 
     const buyer = await this.userService.findOneByWalletAddress(
       buyerAddress,
