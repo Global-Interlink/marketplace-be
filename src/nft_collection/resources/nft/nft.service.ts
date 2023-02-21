@@ -161,6 +161,9 @@ export class NftService {
       relations: {
         collection: true,
         saleItems: true,
+        owner: {
+          address: true,
+        },
       },
       where: {
         id: Not(nftId),
@@ -181,10 +184,10 @@ export class NftService {
       where: { onChainId: nft.objectId },
     });
     if (existed) {
-      return existed;
+      return { ...existed, ownerAddress: user.address.address };
     }
 
-    return await this.nftRepository.save({
+    const savedNft = await this.nftRepository.save({
       name: nft.name,
       onChainId: nft.objectId,
       owner: user,
@@ -192,6 +195,7 @@ export class NftService {
       nftType: nft.nftType,
       image: nft.url,
     });
+    return { ...savedNft, ownerAddress: user.address.address };
   }
 
   async getAllNftByUser(user: User) {
@@ -275,6 +279,7 @@ export class NftService {
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('owner.address', 'address')
       .where('nfts.ownerId = :userId', { userId })
       .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
