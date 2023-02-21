@@ -75,7 +75,7 @@ export class NftService {
       .leftJoinAndSelect('owner.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
-      .leftJoinAndSelect('ntfs.collection', 'collection')
+      .leftJoinAndSelect('nfts.collection', 'collection')
       .where('collection.id = :collectionId', { collectionId })
       .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
@@ -168,9 +168,11 @@ export class NftService {
       },
       where: {
         id: Not(nftId),
-        collection: {
-          id: nft.collection.id,
-        },
+        ...(!!nft?.collection?.id && {
+          collection: {
+            id: nft?.collection.id,
+          },
+        }),
         saleItems: {
           state: SaleItemState.ON_SALE,
         },
