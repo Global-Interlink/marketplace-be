@@ -77,7 +77,7 @@ export class NftService {
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .leftJoinAndSelect('nfts.collection', 'collection')
       .where('collection.id = :collectionId', { collectionId })
-      .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
+      .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
@@ -217,7 +217,7 @@ export class NftService {
       .leftJoinAndSelect('address.network', 'network')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('owner.id = :userId', { userId })
-      .where('saleItems.state != :state', { state: SaleItemState.ON_SALE })
+      .andWhere('saleItems.state != :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
@@ -299,7 +299,7 @@ export class NftService {
       .leftJoinAndSelect('nfts.owner', 'owner')
       .leftJoinAndSelect('owner.address', 'address')
       .where('owner.id = :userId', { userId })
-      .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
+      .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
