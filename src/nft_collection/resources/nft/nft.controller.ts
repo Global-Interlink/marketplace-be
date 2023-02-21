@@ -81,8 +81,8 @@ export class NftController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  findAllNftByUser(@Request() request) {
-    return this.nftService.getAllNftByUser(request.user);
+  findAllNftByUser(@Request() request, @Paginate() query: PaginateQuery) {
+    return this.nftService.getAllNftByUser(request.user, query);
   }
 
   // @UseGuards(JwtAuthGuard)
