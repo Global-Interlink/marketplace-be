@@ -74,7 +74,9 @@ export class NftService {
       .leftJoinAndSelect('nfts.owner', 'owner')
       .leftJoinAndSelect('owner.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('nfts.collectionId = :collectionId', { collectionId })
+      .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
@@ -158,11 +160,18 @@ export class NftService {
     const data = await this.nftRepository.find({
       relations: {
         collection: true,
+        saleItems: true,
+        owner: {
+          address: true,
+        },
       },
       where: {
         id: Not(nftId),
         collection: {
           id: nft.collection.id,
+        },
+        saleItems: {
+          state: SaleItemState.ON_SALE,
         },
       },
       take: 8,
@@ -175,10 +184,10 @@ export class NftService {
       where: { onChainId: nft.objectId },
     });
     if (existed) {
-      return existed;
+      return { ...existed, ownerAddress: user.address.address };
     }
 
-    return await this.nftRepository.save({
+    const savedNft = await this.nftRepository.save({
       name: nft.name,
       onChainId: nft.objectId,
       owner: user,
@@ -186,6 +195,7 @@ export class NftService {
       nftType: nft.nftType,
       image: nft.url,
     });
+    return { ...savedNft, ownerAddress: user.address.address };
   }
 
   async getAllNftByUser(user: User) {
@@ -214,9 +224,14 @@ export class NftService {
     if (transaction.effects.status.status === 'failure') {
       throw new UnprocessableEntityException('Transaction is not success!');
     }
-    const buyerAddress = (
-      transaction.effects.created[0].owner as { AddressOwner: string }
-    ).AddressOwner;
+    const buyEvent: any = transaction.effects.events.find((i: any) =>
+      (i?.moveEvent?.type || '').includes('marketplace::BuyEvent'),
+    );
+
+    if (!buyEvent) {
+      throw new BadRequestException('This is not transaction id of buy event!');
+    }
+    const buyerAddress = buyEvent?.moveEvent?.fields?.actor;
 
     const buyer = await this.userService.findOneByWalletAddress(
       buyerAddress,
@@ -264,6 +279,7 @@ export class NftService {
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('owner.address', 'address')
       .where('nfts.ownerId = :userId', { userId })
       .where('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');

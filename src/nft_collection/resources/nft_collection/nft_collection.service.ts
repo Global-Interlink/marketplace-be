@@ -7,6 +7,7 @@ import { CreateNftCollectionDto } from '../../dto/create-nft_collection.dto';
 import { UpdateNftCollectionDto } from '../../dto/update-nft_collection.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginateQuery, paginate, Paginated } from 'nestjs-paginate';
+import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
 @Injectable()
 export class NftCollectionService {
@@ -26,22 +27,37 @@ export class NftCollectionService {
     return 'not supported right now';
   }
 
-  findAll(query: PaginateQuery): Promise<Paginated<NFTCollection>> {
+  async findAll(query: PaginateQuery): Promise<Paginated<NFTCollection>> {
     const queryBuilder = this.nftCollectionRepository
       .createQueryBuilder('collections')
       .leftJoinAndSelect('collections.creator', 'creator')
       .leftJoinAndSelect('creator.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
-      .loadRelationCountAndMap('collections.totalNft', 'collections.nfts')
+      .leftJoinAndSelect('collections.nfts', 'nfts')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .orderBy('collections.createdDate', 'DESC');
 
-    return paginate(query, queryBuilder, {
+    const pagingData = await paginate(query, queryBuilder, {
       sortableColumns: ['createdDate'],
       nullSort: 'last',
-      searchableColumns: ['name', 'description'],
+      searchableColumns: ['name', 'creatorId'],
       defaultSortBy: [['id', 'DESC']],
       filterableColumns: {},
     });
+
+    const dataAfterCountNfts = pagingData.data.map((collection) => {
+      const nftsOnsale = collection.nfts.filter((nft) =>
+        nft.saleItems.some((item: any) => item.state === SaleItemState.ON_SALE),
+      );
+      delete collection.nfts;
+      return {
+        ...collection,
+        totalNfts: nftsOnsale.length,
+      };
+    });
+
+    pagingData.data = dataAfterCountNfts as any;
+    return pagingData;
   }
 
   findAllByUser(
@@ -75,12 +91,21 @@ export class NftCollectionService {
     });
   }
 
-  getDetailCollection(id: string) {
-    return this.nftCollectionRepository
+  async getDetailCollection(id: string) {
+    const collection = await this.nftCollectionRepository
       .createQueryBuilder('collections')
-      .loadRelationCountAndMap('collections.totalNft', 'collections.nfts')
+      .leftJoinAndSelect('collections.nfts', 'nfts')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('collections.id = :id', { id })
       .getOne();
+    const nftsOnsale = collection.nfts.filter((nft) =>
+      nft.saleItems.some((item: any) => item.state === SaleItemState.ON_SALE),
+    );
+    delete collection.nfts;
+    return {
+      ...collection,
+      totalNfts: nftsOnsale.length,
+    };
   }
 
   findOneByUser(id: string, user: User) {
