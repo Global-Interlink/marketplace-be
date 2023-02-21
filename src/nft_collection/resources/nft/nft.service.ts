@@ -199,17 +199,32 @@ export class NftService {
     return { ...savedNft, ownerAddress: user.address.address };
   }
 
-  async getAllNftByUser(user: User) {
+  async getAllNftByUser(user: User, query: PaginateQuery) {
     const nfts = await this.blockchainService.getNftsByUserAddress(
       user.address.address,
     );
 
-    const savedNfts = await Promise.all(
-      nfts.map((i) => this.saveNftFromOnChainData(i, user)),
-    );
-    return {
-      result: savedNfts,
-    };
+    await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
+
+    const userId = user.id;
+    const queryBuilder = this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.collection', 'collection')
+      .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('owner.address', 'address')
+      .leftJoinAndSelect('address.network', 'network')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
+      .where('owner.id = :userId', { userId })
+      .where('saleItems.state != :state', { state: SaleItemState.ON_SALE })
+      .orderBy('nfts.createdDate', 'DESC');
+
+    return paginate(query, queryBuilder, {
+      sortableColumns: ['createdDate'],
+      nullSort: 'last',
+      searchableColumns: ['name', 'description'],
+      defaultSortBy: [['id', 'DESC']],
+      filterableColumns: {},
+    });
   }
 
   async updateFromBuyEvent(
