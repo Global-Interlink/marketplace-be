@@ -6,7 +6,12 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateNftCollectionDto } from '../../dto/create-nft_collection.dto';
 import { UpdateNftCollectionDto } from '../../dto/update-nft_collection.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PaginateQuery, paginate, Paginated } from 'nestjs-paginate';
+import {
+  PaginateQuery,
+  paginate,
+  Paginated,
+  FilterOperator,
+} from 'nestjs-paginate';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
 @Injectable()
@@ -37,10 +42,22 @@ export class NftCollectionService {
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .orderBy('collections.createdDate', 'DESC');
 
+    if (query.search) {
+      if (query.search?.includes('0x')) {
+        queryBuilder.where('address.address = :creatorAddress', {
+          creatorAddress: query.search,
+        });
+      } else {
+        queryBuilder.where('collections.name like :name', {
+          name: `%${query.search}%`,
+        });
+      }
+    }
+
     const pagingData = await paginate(query, queryBuilder, {
       sortableColumns: ['createdDate'],
       nullSort: 'last',
-      searchableColumns: ['name', 'creatorId'],
+      searchableColumns: [],
       defaultSortBy: [['id', 'DESC']],
       filterableColumns: {},
     });
