@@ -64,7 +64,7 @@ export class NFTCollection extends BaseEntity {
   creator: User;
 
   @Index()
-  @Column()
+  @Column({ nullable: true })
   nftUrls: string;
 
   @Column({ nullable: true })
