@@ -211,7 +211,6 @@ export class NftService {
     await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
 
     const userId = user.id;
-
     const nft_on_sale = await this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.owner', 'owner')
@@ -219,7 +218,7 @@ export class NftService {
       .where('owner.id = :userId', { userId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE }).getMany();
     const nft_onsale_ids = nft_on_sale.map((nft) => nft.id);
-    const queryBuilder = this.nftRepository
+    let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')
       .leftJoinAndSelect('nfts.owner', 'owner')
@@ -227,9 +226,11 @@ export class NftService {
       .leftJoinAndSelect('address.network', 'network')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('owner.id = :userId', { userId })
-      .andWhere('nfts.id not in (:ids)', { ids: nft_onsale_ids.join(", ") })
       .orderBy('nfts.createdDate', 'DESC');
-
+    
+    if (nft_onsale_ids.length > 0) {
+      queryBuilder = queryBuilder.andWhere('nfts.id not in (:ids)', { ids: nft_onsale_ids.join(", ") })
+    }
     return paginate(query, queryBuilder, {
       sortableColumns: ['createdDate'],
       nullSort: 'last',
