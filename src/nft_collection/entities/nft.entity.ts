@@ -16,6 +16,8 @@ import {
 import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 import { Exclude } from 'class-transformer';
+import * as dotenv from 'dotenv';
+dotenv.config();
 @Entity()
 export class NFT extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -52,7 +54,7 @@ export class NFT extends BaseEntity {
   })
   state: NFTState;
 
-  @Column({type: 'uuid', nullable: false })
+  @Column({ type: 'uuid', nullable: false })
   collectionId!: string;
 
   @ManyToOne(() => NFTCollection, (nftCollection) => nftCollection.nfts, {
@@ -60,9 +62,9 @@ export class NFT extends BaseEntity {
   })
   collection: NFTCollection;
 
-  @Column({type: 'uuid', nullable: false })
+  @Column({ type: 'uuid', nullable: false })
   ownerId!: string;
-  
+
   @ManyToOne(() => User, (user) => user.ownedNfts)
   owner: User;
 
@@ -72,7 +74,7 @@ export class NFT extends BaseEntity {
   ownedDate: Date;
 
   @Column({
-    nullable: true
+    nullable: true,
   })
   nftType: string;
 
@@ -83,6 +85,7 @@ export class NFT extends BaseEntity {
   saleStatus: {
     onSale: boolean;
     price: number;
+    usdPrice: number;
     saleItemId: string;
     buyType: SaleItemBuyType;
     auction: Auction;
@@ -98,9 +101,12 @@ export class NFT extends BaseEntity {
         (saleItem) => saleItem.state === SaleItemState.ON_SALE,
       );
       if (onSale) {
+        const usdPrice =
+          Number(onSale.price) * Number(process.env.USD_CONVERSION || 1);
         this.saleStatus = {
           onSale: true,
           price: onSale.price,
+          usdPrice: +usdPrice.toFixed(2),
           saleItemId: onSale.id,
           buyType: onSale.buy_type,
           auction: onSale.auction,
