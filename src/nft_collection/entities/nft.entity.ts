@@ -101,11 +101,12 @@ export class NFT extends BaseEntity {
         (saleItem) => saleItem.state === SaleItemState.ON_SALE,
       );
       if (onSale) {
+        const usdPrice =
+          Number(onSale.price) * Number(process.env.USD_CONVERSION || 1);
         this.saleStatus = {
           onSale: true,
           price: onSale.price,
-          usdPrice:
-            Number(onSale.price) * Number(process.env.USD_CONVERSION || 1),
+          usdPrice: +usdPrice.toFixed(2),
           saleItemId: onSale.id,
           buyType: onSale.buy_type,
           auction: onSale.auction,
