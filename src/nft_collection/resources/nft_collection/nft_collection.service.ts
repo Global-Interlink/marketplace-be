@@ -48,7 +48,7 @@ export class NftCollectionService {
           creatorAddress: query.search,
         });
       } else {
-        queryBuilder.where('collections.name like :name', {
+        queryBuilder.where('collections.name ilike :name', {
           name: `%${query.search}%`,
         });
       }
