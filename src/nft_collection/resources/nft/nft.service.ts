@@ -188,10 +188,11 @@ export class NftService {
 
   async saveNftFromOnChainData(nft: NFTDto, user: User) {
     const existed = await this.nftRepository.findOne({
+      relations: { collection: true },
       where: { onChainId: nft.objectId },
     });
 
-    if (existed && existed.collectionId) {
+    if (existed && existed?.collection?.id) {
       return existed;
     }
 
@@ -205,15 +206,18 @@ export class NftService {
         { collection: collection },
       );
     }
-    return await this.nftRepository.save({
-      name: nft.name,
-      onChainId: nft.objectId,
-      owner: user,
-      description: nft.description,
-      nftType: nft.nftType,
-      image: nft.url,
-      ...(collection && { collection }),
-    });
+
+    if (!existed) {
+      return await this.nftRepository.save({
+        name: nft.name,
+        onChainId: nft.objectId,
+        owner: user,
+        description: nft.description,
+        nftType: nft.nftType,
+        image: nft.url,
+        ...(collection && { collection }),
+      });
+    }
   }
 
   async getAllNftByUser(user: User, query: PaginateQuery) {
