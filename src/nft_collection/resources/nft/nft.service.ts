@@ -308,7 +308,7 @@ export class NftService {
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .leftJoinAndSelect('nfts.owner', 'owner')
-      .leftJoinAndSelect('nfts.collection', 'owner')
+      .leftJoinAndSelect('nfts.collection', 'collection')
       .leftJoinAndSelect('owner.address', 'address')
       .where('owner.id = :userId', { userId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
