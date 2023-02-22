@@ -68,12 +68,15 @@ export class NftService {
       },
     });
 
-    return {
-      ...nft,
-      usdPrice:
-        Number(nft.saleItems[0].price) *
-        Number(this.configService.get('USD_CONVERSION')),
-    };
+    nft.saleItems = nft.saleItems.map(
+      (i) =>
+        ({
+          ...i,
+          usdPrice:
+            Number(i.price) * Number(this.configService.get('USD_CONVERSION')),
+        } as any),
+    );
+    return nft;
   }
 
   async findByCollection(query: PaginateQuery, collection: NFTCollection) {
@@ -250,7 +253,9 @@ export class NftService {
       .orderBy('nfts.createdDate', 'DESC');
 
     if (nft_onsale_ids.length > 0) {
-      queryBuilder = queryBuilder.andWhere('nfts.id not in (:ids)', { ids: nft_onsale_ids.join(", ") })
+      queryBuilder = queryBuilder.andWhere('nfts.id not in (:ids)', {
+        ids: nft_onsale_ids.join(', '),
+      });
     }
     return paginate(query, queryBuilder, {
       sortableColumns: ['createdDate'],
