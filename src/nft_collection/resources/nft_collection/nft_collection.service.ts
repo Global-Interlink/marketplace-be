@@ -1,6 +1,6 @@
 import { User } from 'src/user/entities/user.entity';
 import { NFTCollection } from './../../entities/nft_collection.entity';
-import { FindOptionsRelations, Repository } from 'typeorm';
+import { FindOptionsRelations, Like, Repository } from 'typeorm';
 import { IpfsService } from './../../../common/ipfs/ipfs.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateNftCollectionDto } from '../../dto/create-nft_collection.dto';
@@ -143,5 +143,11 @@ export class NftCollectionService {
 
   remove(id: number) {
     return `This action removes a #${id} nftCollection`;
+  }
+
+  findCollectionByNftUrl(url: string) {
+    return this.nftCollectionRepository.findOne({
+      where: { nftUrls: Like(`%${url}%`) },
+    });
   }
 }
