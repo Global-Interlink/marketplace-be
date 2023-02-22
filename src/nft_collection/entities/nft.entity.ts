@@ -16,6 +16,8 @@ import {
 import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 import { Exclude } from 'class-transformer';
+import * as dotenv from 'dotenv';
+dotenv.config();
 @Entity()
 export class NFT extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -83,6 +85,7 @@ export class NFT extends BaseEntity {
   saleStatus: {
     onSale: boolean;
     price: number;
+    usdPrice: number;
     saleItemId: string;
     buyType: SaleItemBuyType;
     auction: Auction;
@@ -101,6 +104,8 @@ export class NFT extends BaseEntity {
         this.saleStatus = {
           onSale: true,
           price: onSale.price,
+          usdPrice:
+            Number(onSale.price) * Number(process.env.USD_CONVERSION || 1),
           saleItemId: onSale.id,
           buyType: onSale.buy_type,
           auction: onSale.auction,

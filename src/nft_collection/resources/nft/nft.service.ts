@@ -50,7 +50,7 @@ export class NftService {
   }
 
   async findOne(id: string) {
-    const nft = await this.nftRepository.findOne({
+    return await this.nftRepository.findOne({
       where: {
         id: id,
       },
@@ -67,16 +67,6 @@ export class NftService {
         properties: true,
       },
     });
-
-    nft.saleItems = nft.saleItems.map(
-      (i) =>
-        ({
-          ...i,
-          usdPrice:
-            Number(i.price) * Number(this.configService.get('USD_CONVERSION')),
-        } as any),
-    );
-    return nft;
   }
 
   async findByCollection(query: PaginateQuery, collection: NFTCollection) {
