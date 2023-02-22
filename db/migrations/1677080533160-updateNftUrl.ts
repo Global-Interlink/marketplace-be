@@ -4,7 +4,7 @@ export class updateNftUrl1677080533160 implements MigrationInterface {
     name = 'updateNftUrl1677080533160'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "nft_collection" ADD "nftUrls" character varying NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "nft_collection" ADD "nftUrls" character varying`);
         await queryRunner.query(`ALTER TABLE "nft_collection" ADD "website_url" character varying`);
         await queryRunner.query(`ALTER TABLE "nft_collection" ADD "facebook_url" character varying`);
         await queryRunner.query(`ALTER TABLE "nft_collection" ADD "twitter_url" character varying`);
