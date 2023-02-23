@@ -52,7 +52,7 @@ export class BlockchainService {
   }
 
   async crawlData(network_id: string) {
-    // todo: update here. sync event to db
+    // todo
   }
 
   async getNftsBySuiAccount(userAddress: string): Promise<NFTDto[]> {

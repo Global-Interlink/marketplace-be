@@ -28,8 +28,8 @@ export class CronService {
 
   @UseInterceptors(SentryInterceptor)
   @Cron(CronExpression.EVERY_30_SECONDS)
-  async crawlDataOnBlockchain() {
-    const data = await this.blockchainService.crawlData('bsc_testnet'); //todo-quang: hardcode
+  async syncEventLogFromOnChainMarketplace() {
+    const data = await this.blockchainService.crawlData("sui");
     return;
   }
 

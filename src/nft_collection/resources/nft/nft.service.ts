@@ -26,6 +26,7 @@ import { NftPropertyService } from '../nft_property/nft_property.service';
 import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
+
 @Injectable()
 export class NftService {
   constructor(
@@ -37,7 +38,8 @@ export class NftService {
     private orderService: OrderService,
     private saleItemService: SaleItemService,
     private nftPropertyService: NftPropertyService,
-  ) {}
+  ) {    
+  }
 
   async create(
     createNftDto: CreateNftDto,
@@ -217,7 +219,7 @@ export class NftService {
       .leftJoinAndSelect('address.network', 'network')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('owner.id = :userId', { userId })
-      .andWhere('saleItems.state != :state', { state: SaleItemState.ON_SALE })
+      .andWhere('saleItems.state <> :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
