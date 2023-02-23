@@ -33,7 +33,7 @@ export class SaleItemController {
     if (nft.saleStatus && nft.saleStatus.onSale === true) {
       throw new BadRequestException('This NFT is already on sale');
     }
-    return this.saleItemService.create(createSaleItemDto, nft, seller);
+    return this.saleItemService.create(createSaleItemDto, nft as any, seller);
   }
 
   @Post(':id/cancel')

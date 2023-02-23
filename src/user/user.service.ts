@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BlockchainService } from 'src/blockchain/blockchain.service';
 
@@ -8,6 +8,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { SignMessage } from './entities/signmessage.entity';
 import { User } from './entities/user.entity';
 import { randomUUID } from 'crypto';
+import { NFT } from 'src/nft_collection/entities/nft.entity';
+import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 @Injectable()
 export class UserService {
   constructor(
@@ -15,6 +17,8 @@ export class UserService {
     private usersRepository: Repository<User>,
     @InjectRepository(SignMessage)
     private signMessageRepository: Repository<SignMessage>,
+    @InjectRepository(NFT)
+    private nftRepository: Repository<NFT>,
     private blockchainService: BlockchainService,
   ) {}
 
@@ -32,21 +36,59 @@ export class UserService {
     return user;
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async getMyInfo(user: User) {
+    const [_, totalItems] = await this.nftRepository.findAndCount({
+      relations: { owner: true },
+      where: {
+        owner: {
+          id: user.id,
+        },
+      },
+    });
+    const userId = user.id;
+    const nftOnSale = await this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
+      .where('owner.id = :userId', { userId })
+      .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
+      .getMany();
+    const nftOnSaleIds = nftOnSale.map((nft) => nft.id);
+    let queryBuilder = this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.collection', 'collection')
+      .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('owner.address', 'address')
+      .leftJoinAndSelect('address.network', 'network')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
+      .where('owner.id = :userId', { userId })
+      .orderBy('nfts.createdDate', 'DESC');
+
+    if (nftOnSaleIds.length > 0) {
+      queryBuilder = queryBuilder.andWhere('nfts.id not in (:ids)', {
+        ids: nftOnSaleIds.join(', '),
+      });
+    }
+    const totalInMyWallet = await queryBuilder.getCount();
+
+    return {
+      totalItems,
+      listedItems: nftOnSale.length,
+      totalInMyWallet,
+    };
   }
 
   async findOne(id: string) {
     return this.usersRepository.findOne({
       where: {
-        id: id
+        id: id,
       },
       relations: {
         address: {
-          network: true
-        }
-      }
-    })
+          network: true,
+        },
+      },
+    });
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
@@ -90,7 +132,7 @@ export class UserService {
   }
 
   async getLastestMessage(walletAddress: string, chain: string) {
-    let lastestMessage = await this.signMessageRepository.findOne({
+    return await this.signMessageRepository.findOne({
       where: {
         user: {
           address: {
@@ -105,6 +147,5 @@ export class UserService {
         createdDate: 'DESC',
       },
     });
-    return lastestMessage;
   }
 }

@@ -39,7 +39,16 @@ AdminJS.registerAdapter({
           rootPath: '/admin',
           resources: [
             Category,
-            NFTCollection,
+            {
+              resource: NFTCollection,
+              options: {
+                properties: {
+                  description: {
+                    type: 'richtext',
+                  },
+                },
+              },
+            },
             NFT,
             NFTProperty,
             User,

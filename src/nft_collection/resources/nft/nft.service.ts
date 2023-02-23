@@ -1,5 +1,5 @@
 import { User } from 'src/user/entities/user.entity';
-import { In, Not, Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
@@ -22,7 +22,6 @@ import {
 import { OrderService } from 'src/marketplace/order/order.service';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
-import { NftPropertyService } from '../nft_property/nft_property.service';
 import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
@@ -37,9 +36,7 @@ export class NftService {
     private userService: UserService,
     private orderService: OrderService,
     private saleItemService: SaleItemService,
-    private nftPropertyService: NftPropertyService,
-  ) {    
-  }
+  ) {}
 
   async create(
     createNftDto: CreateNftDto,
@@ -49,8 +46,8 @@ export class NftService {
     return 'Not supported right now';
   }
 
-  findOne(id: string) {
-    return this.nftRepository.findOne({
+  async findOne(id: string) {
+    return await this.nftRepository.findOne({
       where: {
         id: id,
       },
@@ -100,9 +97,11 @@ export class NftService {
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')
       .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .leftJoinAndSelect('owner.address', 'address')
       .leftJoinAndSelect('address.network', 'network')
       .where('owner.id = :userId', { userId })
+      .andWhere('saleItems.state <> :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
     return paginate(query, queryBuilder, {
@@ -186,21 +185,36 @@ export class NftService {
 
   async saveNftFromOnChainData(nft: NFTDto, user: User) {
     const existed = await this.nftRepository.findOne({
+      relations: { collection: true },
       where: { onChainId: nft.objectId },
     });
-    if (existed) {
-      return { ...existed, ownerAddress: user.address.address };
+
+    if (existed && existed?.collection?.id) {
+      return existed;
     }
 
-    const savedNft = await this.nftRepository.save({
-      name: nft.name,
-      onChainId: nft.objectId,
-      owner: user,
-      description: nft.description,
-      nftType: nft.nftType,
-      image: nft.url,
-    });
-    return { ...savedNft, ownerAddress: user.address.address };
+    const collection = await this.nftCollectionService.findCollectionByNftUrl(
+      nft.url,
+    );
+
+    if (existed && collection) {
+      return await this.nftRepository.update(
+        { id: existed.id },
+        { collection: collection },
+      );
+    }
+
+    if (!existed) {
+      return await this.nftRepository.save({
+        name: nft.name,
+        onChainId: nft.objectId,
+        owner: user,
+        description: nft.description,
+        nftType: nft.nftType,
+        image: nft.url,
+        ...(collection && { collection }),
+      });
+    }
   }
 
   async getAllNftByUser(user: User, query: PaginateQuery) {
@@ -211,7 +225,15 @@ export class NftService {
     await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
 
     const userId = user.id;
-    const queryBuilder = this.nftRepository
+    const nft_on_sale = await this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
+      .where('owner.id = :userId', { userId })
+      .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
+      .getMany();
+    const nft_onsale_ids = nft_on_sale.map((nft) => nft.id);
+    let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')
       .leftJoinAndSelect('nfts.owner', 'owner')
@@ -219,9 +241,13 @@ export class NftService {
       .leftJoinAndSelect('address.network', 'network')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('owner.id = :userId', { userId })
-      .andWhere('saleItems.state <> :state', { state: SaleItemState.ON_SALE })
       .orderBy('nfts.createdDate', 'DESC');
 
+    if (nft_onsale_ids.length > 0) {
+      queryBuilder = queryBuilder.andWhere('nfts.id not in (:ids)', {
+        ids: nft_onsale_ids.join(', '),
+      });
+    }
     return paginate(query, queryBuilder, {
       sortableColumns: ['createdDate'],
       nullSort: 'last',
@@ -288,7 +314,7 @@ export class NftService {
         buyType: SaleItemBuyType.BUY_NOW,
         price: Number(listEvent?.moveEvent?.fields?.price) / Math.pow(10, 9),
       },
-      nft,
+      nft as any,
       user,
     );
   }
@@ -299,6 +325,7 @@ export class NftService {
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('nfts.collection', 'collection')
       .leftJoinAndSelect('owner.address', 'address')
       .where('owner.id = :userId', { userId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
