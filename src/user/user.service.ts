@@ -99,7 +99,7 @@ export class UserService {
     return `This action removes a #${id} user`;
   }
 
-  async findOneByWalletAddress(walletAddress: string, chain: string) {
+  async findOneByWalletAddress(walletAddress: string, chain: string = "SUI") {
     return await this.usersRepository.findOne({
       relations: {
         address: {

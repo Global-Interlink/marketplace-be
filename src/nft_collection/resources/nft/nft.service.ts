@@ -22,10 +22,9 @@ import {
 import { OrderService } from 'src/marketplace/order/order.service';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
-import { NftPropertyService } from '../nft_property/nft_property.service';
 import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
-import { ConfigService } from '@nestjs/config';
+
 
 @Injectable()
 export class NftService {
@@ -37,8 +36,6 @@ export class NftService {
     private userService: UserService,
     private orderService: OrderService,
     private saleItemService: SaleItemService,
-    private nftPropertyService: NftPropertyService,
-    private configService: ConfigService,
   ) {}
 
   async create(
@@ -343,6 +340,22 @@ export class NftService {
     });
   }
 
+  async doDelistNft(nftId, user) {
+    const nft = await this.nftRepository.findOne({
+      relations: { saleItems: true, owner: true },
+      where: {
+        id: nftId,
+        saleItems: {
+          state: SaleItemState.ON_SALE,
+        },
+        owner: {
+          id: user.id,
+        },
+      },
+    });
+    return await this.saleItemService.cancel(nft.saleItems[0], user);
+
+  }
   async updateDelistEvent(
     id: string,
     { txhash }: UpdatePutOnSaleEventBodyDto,
@@ -358,20 +371,81 @@ export class NftService {
         'This is not transaction id of delist event!',
       );
     }
+    await this.doDelistNft(id, user);
+  }
 
-    const nft = await this.nftRepository.findOne({
-      relations: { saleItems: true, owner: true },
-      where: {
-        id,
-        saleItems: {
-          state: SaleItemState.ON_SALE,
-        },
-        owner: {
-          id: user.id,
-        },
-      },
-    });
-
-    return await this.saleItemService.cancel(nft.saleItems[0], user);
+  async syncMarketplaceEventToNft() {
+    const newEvents = await this.blockchainService.getNewEventsInModule();
+    for (let i = 0; i < newEvents.length; i++) {
+      try {
+        const eventData = newEvents[i].event?.moveEvent;
+        const eventType = newEvents[i].event?.moveEvent?.type;
+        if (eventType && eventType.includes('marketplace::DelistEvent')) {
+          console.log(`=== Handling DELIST event: ${JSON.stringify(eventData)}`);
+          const nftOnchainId = eventData.fields.item_id;
+          const userAddress = eventData.fields.actor;
+          const nft = await this.nftRepository.findOne({
+            relations: { saleItems: true },
+            where: {
+              onChainId: nftOnchainId
+            }
+          });
+          if (nft && nft.saleStatus !== null) {
+            console.log(">>> >>> Cancelling sale item")
+            const user = await this.userService.findOneByWalletAddress(userAddress);
+            this.doDelistNft(nft.id, user);
+          }
+        }
+        else if (eventType && eventType.includes('marketplace::ListEvent')) {
+          console.log(`=== Handling LIST event: ${JSON.stringify(eventData)}`);
+          const price = eventData.fields.price;
+          const nftOnchainId = eventData.fields.item_id;
+          const userAddress = eventData.fields.actor;
+          const nft = await this.nftRepository.findOne({
+            relations: { saleItems: true },
+            where: {
+              onChainId: nftOnchainId
+            }
+          });
+          
+          if (nft && nft.saleStatus === null) {
+            console.log(">>> >>> Creating sale item")
+            const user = await this.userService.findOneByWalletAddress(userAddress);
+            this.saleItemService.create(
+              {
+                signature: null,
+                nftId: nft.id,
+                auction: null,
+                clientId: null,
+                buyType: SaleItemBuyType.BUY_NOW,
+                price: Number(price) / Math.pow(10, 9),
+              },
+              nft as any,
+              user,
+            );
+          }
+        }
+        else if (eventType && eventType.includes('marketplace::BuyEvent')) {
+          console.log(`=== Handling BUY event: ${JSON.stringify(eventData)}`);
+          const nftOnchainId = eventData.fields.item_id;
+          const userAddress = eventData.fields.actor;
+          const nft = await this.nftRepository.findOne({
+            relations: { saleItems: true },
+            where: {
+              onChainId: nftOnchainId
+            }
+          });
+          
+          if (nft && nft.saleStatus !== null) {
+            console.log(">>> >>> Creating order")
+            const user = await this.userService.findOneByWalletAddress(userAddress);
+            const saleItem = await this.saleItemService.findOneOnSaleByNftId(nft.id);
+            return this.orderService.create({ saleItemIds: [saleItem.id] }, user);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
   }
 }
