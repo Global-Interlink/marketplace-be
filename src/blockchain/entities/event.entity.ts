@@ -2,7 +2,7 @@ import { BaseEntity } from '../../base/entity.base';
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity()
-export class Network extends BaseEntity {
+export class EventLog extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -13,5 +13,8 @@ export class Network extends BaseEntity {
   eventId: string;
 
   @Column()
-  raw_data: string;
+  timestamp: string;
+
+  @Column()
+  rawData: string;
 }

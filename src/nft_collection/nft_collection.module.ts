@@ -1,3 +1,4 @@
+import { EventLog } from './../blockchain/entities/event.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NFTCollection } from './entities/nft_collection.entity';
 import { IpfsService } from './../common/ipfs/ipfs.service';
@@ -35,6 +36,7 @@ import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
       Order,
       SaleItem,
       Auction,
+      EventLog
     ]),
   ],
   controllers: [NftCollectionController, NftController],

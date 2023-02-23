@@ -1,3 +1,4 @@
+import { EventLog } from './blockchain/entities/event.entity';
 import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
 import { Category } from './nft_collection/entities/category.entity';
 import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
@@ -102,6 +103,7 @@ AdminJS.registerAdapter({
                 },
               },
             },
+            EventLog
           ],
         },
         auth: {

@@ -7,7 +7,6 @@ export class CronController {
 
   @Post("test")
   getHello(): string {
-    this.cronService.crawlAuctionExpired();
     return "test";
   }
 }
