@@ -1,7 +1,7 @@
 import { SentryInterceptor } from './../sentry.interceptor';
 import { Injectable, UseInterceptors } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
 import { Network } from './entities/network.entity';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
@@ -103,14 +103,15 @@ export class BlockchainService {
     const lastEventLog = await this.eventLogRepository.findOne({
       where: {},
       order: {
-        "timestamp": "DESC"
+        "timestamp": "DESC",
+        "id": "DESC"
       },
     });
     let eventCursor = null;
     if (lastEventLog) {
       eventCursor = JSON.parse(lastEventLog.eventId);
     }
-    console.log(eventCursor);
+    console.log("Last event id", eventCursor);
     const networkEnv = process.env.BLOCKCHAIN_NETWORK_ENV;
     const provider = new JsonRpcProvider(networkEnv);
     const eventQuery = {
@@ -120,38 +121,27 @@ export class BlockchainService {
       }
     };
 
-    let newEvents = [];
+    let candidateEvents = [];
     const events = await provider.getEvents(eventQuery, eventCursor, null, 'ascending');
     console.log(`Fetched ${events.data.length} events`)
-    for (let i = 0; i < events["data"].length; i++) {
-      const eventData = events["data"][i];
-      const isNew = await this.createEventLogFromEventData(eventData);
-      if (isNew) {
-        newEvents.push(eventData);
+    const eventIds = events["data"].map((data) => JSON.stringify(data.id));
+    const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
+    .where('eventlog.eventId IN (:...keys)', { keys: eventIds })
+    .getMany();
+    const existingEventIds = existingEvents.map((e) => e.eventId);
+    for (const eventData of events["data"]) {
+      const eventId = JSON.stringify(eventData.id);
+      if (existingEventIds.includes(eventId) === false) {
+        const eventLog = new EventLog();
+        eventLog.transactionId = eventData.txDigest;
+        eventLog.eventId = eventId;
+        eventLog.timestamp = eventData.timestamp.toString();
+        eventLog.rawData = JSON.stringify(eventData);
+        await eventLog.save();
       }
+      candidateEvents.push(eventData);
     }
 
-    return newEvents;
-  }
-
-  async createEventLogFromEventData(eventData: any) {
-    const eventId = JSON.stringify(eventData.id);
-    const existing_event = await this.eventLogRepository.findOne({
-      where: {
-        eventId: eventId
-      }
-    });
-    if (!existing_event) {
-      console.log("Creating event: ", eventId)
-      const eventLog = new EventLog();
-      eventLog.transactionId = eventData.txDigest;
-      eventLog.eventId = eventId;
-      eventLog.timestamp = eventData.timestamp;
-      eventLog.rawData = JSON.stringify(eventData);
-      eventLog.save();
-
-      return true;
-    }
-    return false;
+    return candidateEvents;
   }
 }

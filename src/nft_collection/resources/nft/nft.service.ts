@@ -378,10 +378,11 @@ export class NftService {
 
   async syncMarketplaceEventToNft() {
     const newEvents = await this.blockchainService.getNewEventsInModule();
+    console.log(`${newEvents.length} new events`);
     for (let i = 0; i < newEvents.length; i++) {
-      try {
         const eventData = newEvents[i].event?.moveEvent;
         const eventType = newEvents[i].event?.moveEvent?.type;
+        console.log("Event type", eventType);
         if (eventType && eventType.includes('marketplace::DelistEvent')) {
           console.log(`=== Handling DELIST event: ${JSON.stringify(eventData)}`);
           const nftOnchainId = eventData.fields.item_id;
@@ -395,7 +396,7 @@ export class NftService {
           if (nft && nft.saleStatus !== null) {
             console.log(">>> >>> Cancelling sale item")
             const user = await this.userService.findOneByWalletAddress(userAddress);
-            this.doDelistNft(nft.id, user);
+            await this.doDelistNft(nft.id, user);
           }
         }
         else if (eventType && eventType.includes('marketplace::ListEvent')) {
@@ -413,7 +414,7 @@ export class NftService {
           if (nft && nft.saleStatus === null) {
             console.log(">>> >>> Creating sale item")
             const user = await this.userService.findOneByWalletAddress(userAddress);
-            this.saleItemService.create(
+            await this.saleItemService.create(
               {
                 signature: null,
                 nftId: nft.id,
@@ -442,12 +443,9 @@ export class NftService {
             console.log(">>> >>> Creating order")
             const user = await this.userService.findOneByWalletAddress(userAddress);
             const saleItem = await this.saleItemService.findOneOnSaleByNftId(nft.id);
-            return this.orderService.create({ saleItemIds: [saleItem.id] }, user);
+            await this.orderService.create({ saleItemIds: [saleItem.id] }, user);
           }
         }
-      } catch (error) {
-        console.error(error);
-      }
     }
   }
 }
