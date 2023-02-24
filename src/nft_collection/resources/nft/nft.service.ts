@@ -233,12 +233,7 @@ export class NftService {
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .getMany();
 
-    let nft_onsale_ids = null;
-    if (nft_on_sale.length == 1) {
-      nft_onsale_ids = nft_on_sale.map((nft) => `${nft.id}`);
-    } else {
-      nft_onsale_ids = nft_on_sale.map((nft) => `'${nft.id}'`);
-    }
+    let nft_onsale_ids = nft_on_sale.map((nft) => nft.id);
     
     let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
@@ -251,8 +246,8 @@ export class NftService {
       .orderBy('nfts.createdDate', 'DESC');
       
     if (nft_onsale_ids.length > 0) {
-      queryBuilder = queryBuilder.andWhere('nfts.id not in (:ids)', {
-        ids: nft_onsale_ids.join(', '),
+      queryBuilder = queryBuilder.andWhere('nfts.id NOT IN (:...ids)', {
+        ids: nft_onsale_ids,
       });
     }
     return paginate(query, queryBuilder, {

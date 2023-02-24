@@ -110,6 +110,7 @@ export class BlockchainService {
     if (lastEventLog) {
       eventCursor = JSON.parse(lastEventLog.eventId);
     }
+    console.log(eventCursor);
     const networkEnv = process.env.BLOCKCHAIN_NETWORK_ENV;
     const provider = new JsonRpcProvider(networkEnv);
     const eventQuery = {
@@ -120,12 +121,12 @@ export class BlockchainService {
     };
 
     let newEvents = [];
-    const events = await provider.getEvents(eventQuery, eventCursor, 100);
+    const events = await provider.getEvents(eventQuery, eventCursor, null, 'ascending');
     console.log(`Fetched ${events.data.length} events`)
     for (let i = 0; i < events["data"].length; i++) {
       const eventData = events["data"][i];
-      const isCreated = await this.createEventLogFromEventData(eventData);
-      if (isCreated) {
+      const isNew = await this.createEventLogFromEventData(eventData);
+      if (isNew) {
         newEvents.push(eventData);
       }
     }
