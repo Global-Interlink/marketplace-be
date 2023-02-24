@@ -53,7 +53,7 @@ export class UserService {
       .where('owner.id = :userId', { userId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .getMany();
-    const nftOnSaleIds = nftOnSale.map((nft) => nft.id);
+    const nftOnSaleIds = nftOnSale.map((nft) => `'${nft.id}'`);
     let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')

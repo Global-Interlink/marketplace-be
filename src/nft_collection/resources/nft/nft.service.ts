@@ -232,7 +232,7 @@ export class NftService {
       .where('owner.id = :userId', { userId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .getMany();
-    const nft_onsale_ids = nft_on_sale.map((nft) => nft.id);
+    const nft_onsale_ids = nft_on_sale.map((nft) => `'${nft.id}'`);
     let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')
