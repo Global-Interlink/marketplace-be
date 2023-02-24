@@ -53,7 +53,14 @@ export class UserService {
       .where('owner.id = :userId', { userId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .getMany();
-    const nftOnSaleIds = nftOnSale.map((nft) => `'${nft.id}'`);
+    
+    let nft_onsale_ids = null;
+    if (nftOnSale.length == 1) {
+      nft_onsale_ids = nftOnSale.map((nft) => `${nft.id}`);
+    } else {
+      nft_onsale_ids = nftOnSale.map((nft) => `'${nft.id}'`);
+    }
+  
     let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')
@@ -64,9 +71,9 @@ export class UserService {
       .where('owner.id = :userId', { userId })
       .orderBy('nfts.createdDate', 'DESC');
 
-    if (nftOnSaleIds.length > 0) {
+    if (nft_onsale_ids.length > 0) {
       queryBuilder = queryBuilder.andWhere('nfts.id not in (:ids)', {
-        ids: nftOnSaleIds.join(', '),
+        ids: nft_onsale_ids.join(', '),
       });
     }
     const totalInMyWallet = await queryBuilder.getCount();
