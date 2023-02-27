@@ -52,7 +52,16 @@ AdminJS.registerAdapter({
             },
             NFT,
             NFTProperty,
-            User,
+            {
+              resource: User,
+              options: {
+                properties: {
+                  id: {
+                      isTitle: 'true',
+                  }
+                },
+              },
+            },
             {
               resource: Address,
               options: {

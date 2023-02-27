@@ -11,9 +11,11 @@ import {
   JoinColumn,
   OneToMany,
   Column,
+  AfterLoad,
 } from 'typeorm';
 import { SignMessage } from './signmessage.entity';
 import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class User extends BaseEntity {
