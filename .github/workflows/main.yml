@@ -23,10 +23,10 @@ jobs:
       - name: SSH to dev server
         uses: appleboy/ssh-action@v0.1.8
         with:
-          host: ${{ env.DEV_HOST }}
-          username: ${{ env.DEV_USERNAME }}
+          host: ${{ vars.DEV_HOST }}
+          username: ${{ vars.DEV_USERNAME }}
           key: ${{ secrets.DEV_SSH_KEY }}
-          port: ${{ env.DEV_PORT }}
+          port: ${{ vars.DEV_PORT }}
           script: |
             cd global-interlink-marketplace-be
             ./deploy
