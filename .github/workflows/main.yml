@@ -3,10 +3,6 @@ on:
   push:
     branches:
       - 'develop'
-  pull_request:
-    types: closed
-    branches:
-      - 'develop'
   workflow_dispatch:
     inputs:
       environment:
@@ -18,7 +14,7 @@ run-name: Triggered to deploy on ${{ inputs.environment || 'dev' }} by ${{ githu
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
-    if: inputs.environment == 'development' || github.event_name == 'push' || github.event_name == 'pull_request'
+    if: inputs.environment == 'development' || github.event_name == 'push'
     concurrency: development
     steps:
       - name: SSH to dev server
