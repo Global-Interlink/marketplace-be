@@ -7,18 +7,18 @@ on:
     types: closed
     branches:
       - 'develop'
-#   workflow_dispatch:
-#     inputs:
-#       environment:
-#         type: environment
-#         required: true
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        required: true
 
 run-name: Triggered to deploy on ${{ inputs.environment }} by ${{ github.actor }}
 
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
-    environment: development
+    if: inputs.environment == 'development' || github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - name: SSH to dev server
         uses: appleboy/ssh-action@v0.1.8
