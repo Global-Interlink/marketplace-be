@@ -13,7 +13,7 @@ on:
         type: environment
         required: true
 
-run-name: Triggered to deploy on ${{ inputs.environment }} by ${{ github.actor }}
+run-name: Triggered to deploy on ${{ inputs.environment || 'dev' }} by ${{ github.actor }}
 
 jobs:
   deploy-dev:
