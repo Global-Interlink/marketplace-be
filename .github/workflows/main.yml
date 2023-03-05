@@ -1,0 +1,33 @@
+name: Deploy workflow
+on:
+  push:
+    branches:
+      - 'develop'
+  pull_request:
+    types: closed
+    branches:
+      - 'develop'
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        required: true
+
+run-name: Triggered to deploy on ${{ inputs.environment || 'dev' }} by ${{ github.actor }}
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    if: inputs.environment == 'development' || github.event_name == 'push' || github.event_name == 'pull_request'
+    concurrency: development
+    steps:
+      - name: SSH to dev server
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ vars.DEV_HOST }}
+          username: ${{ vars.DEV_USERNAME }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          port: ${{ vars.DEV_PORT }}
+          script: |
+            cd global-interlink-marketplace-be
+            ./deploy
