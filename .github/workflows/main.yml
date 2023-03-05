@@ -19,6 +19,7 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     if: inputs.environment == 'development' || github.event_name == 'push' || github.event_name == 'pull_request'
+    concurrency: development
     steps:
       - name: SSH to dev server
         uses: appleboy/ssh-action@v0.1.8
