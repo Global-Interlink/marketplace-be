@@ -9,13 +9,14 @@ on:
         type: environment
         required: true
 
-run-name: Triggered to deploy on ${{ inputs.environment || 'dev' }} by ${{ github.actor }}
+run-name: Triggered to deploy on ${{ inputs.environment || 'development' }} by ${{ github.actor }}
 
 jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     if: inputs.environment == 'development' || github.event_name == 'push'
     concurrency: development
+    environment: development
     steps:
       - name: SSH to dev server
         uses: appleboy/ssh-action@v0.1.8
