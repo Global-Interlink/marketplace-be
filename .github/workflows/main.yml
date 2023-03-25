@@ -6,8 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        type: environment
+        description: 'environment'
         required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - staging
 
 run-name: Triggered to deploy on ${{ inputs.environment || 'development' }} by ${{ github.actor }}
 
@@ -27,4 +32,20 @@ jobs:
           port: ${{ vars.DEV_PORT }}
           script: |
             cd global-interlink-marketplace-be
+            ./deploy
+  deploy-staging:
+    runs-on: ubuntu-latest
+    if: inputs.environment == 'staging'
+    concurrency: staging
+    environment: staging
+    steps:
+      - name: SSH to staging server
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ vars.STAGING_HOST }}
+          username: ${{ vars.DEV_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ vars.DEV_PORT }}
+          script: |
+            cd marketplace-be
             ./deploy
