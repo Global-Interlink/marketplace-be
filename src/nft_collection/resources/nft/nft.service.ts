@@ -272,17 +272,16 @@ export class NftService {
     if (transaction.effects.status.status === 'failure') {
       throw new UnprocessableEntityException('Transaction is not success!');
     }
-    const buyEvent: any = transaction.effects.events.find((i: any) =>
-      (i?.moveEvent?.type || '').includes('marketplace::BuyEvent'),
-    );
+
+    const events = await this.blockchainService.getEventByEventDigest(transaction.effects.eventsDigest);
+    const buyEvent = events.data.find(() => true);
 
     if (!buyEvent) {
       throw new BadRequestException('This is not transaction id of buy event!');
     }
-    const buyerAddress = buyEvent?.moveEvent?.fields?.actor;
 
     const buyer = await this.userService.findOneByWalletAddress(
-      buyerAddress,
+      buyEvent.parsedJson.actor,
       chain,
     );
     const saleItem = await this.saleItemService.findOneOnSaleByNftId(id);
@@ -380,13 +379,13 @@ export class NftService {
     const newEvents = await this.blockchainService.getNewEventsInModule();
     console.log(`${newEvents.length} new events`);
     for (let i = 0; i < newEvents.length; i++) {
-        const eventData = newEvents[i].event?.moveEvent;
-        const eventType = newEvents[i].event?.moveEvent?.type;
+        const eventData = newEvents[i].parsedJson;
+        const eventType = newEvents[i].type;
         console.log("Event type", eventType);
         if (eventType && eventType.includes('marketplace::DelistEvent')) {
           console.log(`=== Handling DELIST event: ${JSON.stringify(eventData)}`);
-          const nftOnchainId = eventData.fields.item_id;
-          const userAddress = eventData.fields.actor;
+          const nftOnchainId = eventData.item_id;
+          const userAddress = eventData.actor;
           const nft = await this.nftRepository.findOne({
             relations: { saleItems: true },
             where: {
@@ -401,9 +400,9 @@ export class NftService {
         }
         else if (eventType && eventType.includes('marketplace::ListEvent')) {
           console.log(`=== Handling LIST event: ${JSON.stringify(eventData)}`);
-          const price = eventData.fields.price;
-          const nftOnchainId = eventData.fields.item_id;
-          const userAddress = eventData.fields.actor;
+          const price = eventData.price;
+          const nftOnchainId = eventData.item_id;
+          const userAddress = eventData.actor;
           const nft = await this.nftRepository.findOne({
             relations: { saleItems: true },
             where: {
@@ -430,8 +429,8 @@ export class NftService {
         }
         else if (eventType && eventType.includes('marketplace::BuyEvent')) {
           console.log(`=== Handling BUY event: ${JSON.stringify(eventData)}`);
-          const nftOnchainId = eventData.fields.item_id;
-          const userAddress = eventData.fields.actor;
+          const nftOnchainId = eventData.item_id;
+          const userAddress = eventData.actor;
           const nft = await this.nftRepository.findOne({
             relations: { saleItems: true },
             where: {

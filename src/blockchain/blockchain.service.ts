@@ -5,8 +5,9 @@ import { In, Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
 import { Network } from './entities/network.entity';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
-import { JsonRpcProvider, SuiTransactionResponse } from '@mysten/sui.js';
+import { ObjectId, SuiTransactionBlockResponse } from '@mysten/sui.js';
 import { EventLog } from './entities/event.entity';
+import { getRPCConnection } from "../../src/utils/common";
 
 @UseInterceptors(SentryInterceptor)
 @Injectable()
@@ -59,27 +60,30 @@ export class BlockchainService {
   }
 
   async getNftsBySuiAccount(userAddress: string): Promise<NFTDto[]> {
-    const networkEnv = process.env.BLOCKCHAIN_NETWORK_ENV;
-    const provider = new JsonRpcProvider(networkEnv);
-    const objects = await provider.getObjectsOwnedByAddress(userAddress);
-    const detailOfObjects: any = await provider.getObjectBatch(
-      objects.map((x) => x.objectId),
-    );
+    const provider = getRPCConnection();
+    const objects = await provider.getOwnedObjects({ owner: userAddress });
+    const detailOfObjects: any = await provider.multiGetObjects({ ids: objects.data.map((x) => x.data?.objectId), options: {
+      showType: true,
+      showContent: true,
+      showOwner: true,
+      showPreviousTransaction: true,
+      showStorageRebate: true,
+      showDisplay: true,
+    } });
     const nftObjects = detailOfObjects.filter((x) => {
       return (
-        x.status === 'Exists' &&
-        x.details?.data?.fields.name !== undefined &&
-        x.details?.data?.fields.url !== undefined
+        x.data?.content?.fields.name !== undefined &&
+        (x.data?.content?.fields.img_url !== undefined || x.data?.content?.fields.url !== undefined)
       );
     });
     const result = nftObjects.map((nft) => {
       return {
-        name: nft.details.data.fields.name,
-        description: nft.details.data.fields?.description,
-        url: nft.details.data.fields.url,
-        objectId: nft.details.data.fields.id.id,
-        owner: nft.details.owner.AddressOwner,
-        nftType: nft.details.data.type,
+        name: nft.data.content.fields.name,
+        description: nft.data.content.fields?.description,
+        url: nft.data.content.fields.url || nft.data.content.fields.img_url,
+        objectId: nft.data.content.fields.id.id,
+        owner: nft.data.owner.AddressOwner,
+        nftType: nft.data.type,
       };
     });
     return result;
@@ -92,12 +96,23 @@ export class BlockchainService {
 
   async getTransactionBuyByTxHash(
     txHash: string,
-  ): Promise<SuiTransactionResponse> {
-    const networkEnv = process.env.BLOCKCHAIN_NETWORK_ENV;
-    const provider = new JsonRpcProvider(networkEnv);
-    const transaction = await provider.getTransactionWithEffects(txHash);
+  ): Promise<SuiTransactionBlockResponse> {
+    const provider = getRPCConnection();
+    const transaction = await provider.getTransactionBlock({ digest: txHash, options: { showEffects: true } });
     return transaction;
   }
+
+  async getEventByEventDigest(
+    eventsDigest: string
+  ) {
+    const provider = getRPCConnection();
+    const eventQuery = {
+      Transaction: eventsDigest
+    };
+    const event = await provider.queryEvents({ query: eventQuery });
+    return event;
+  }
+
 
   async getNewEventsInModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
@@ -112,18 +127,21 @@ export class BlockchainService {
       eventCursor = JSON.parse(lastEventLog.eventId);
     }
     console.log("Last event id", eventCursor);
-    const networkEnv = process.env.BLOCKCHAIN_NETWORK_ENV;
-    const provider = new JsonRpcProvider(networkEnv);
+    const provider = getRPCConnection();
     const eventQuery = {
       MoveModule: {
-          package: process.env.PACKAGE_OBJECT_ID,
-          module: "marketplace"
+        package: process.env.PACKAGE_OBJECT_ID,
+        module: "marketplace"
       }
     };
 
     let candidateEvents = [];
-    const events = await provider.getEvents(eventQuery, eventCursor, null, 'ascending');
+    const events = await provider.queryEvents({ query: eventQuery, cursor: eventCursor, order: 'ascending' });
     console.log(`Fetched ${events.data.length} events`)
+    if (events.data.length === 0 ) {
+      return [];
+    }
+
     const eventIds = events["data"].map((data) => JSON.stringify(data.id));
     const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
     .where('eventlog.eventId IN (:...keys)', { keys: eventIds })
@@ -133,9 +151,9 @@ export class BlockchainService {
       const eventId = JSON.stringify(eventData.id);
       if (existingEventIds.includes(eventId) === false) {
         const eventLog = new EventLog();
-        eventLog.transactionId = eventData.txDigest;
+        eventLog.transactionId = eventData.id.txDigest;
         eventLog.eventId = eventId;
-        eventLog.timestamp = eventData.timestamp.toString();
+        eventLog.timestamp = eventData.timestampMs?.toString();
         eventLog.rawData = JSON.stringify(eventData);
         await eventLog.save();
       }
