@@ -1,4 +1,5 @@
 FROM node:18-alpine
+RUN apk update && apk add bash
 
 # Docker working directory
 WORKDIR /app
