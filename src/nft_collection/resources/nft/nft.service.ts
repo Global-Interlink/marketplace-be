@@ -297,8 +297,15 @@ export class NftService {
     const transaction: any =
       await this.blockchainService.getTransactionBuyByTxHash(txhash);
 
-    const listEvent = transaction.effects.events.find((i: any) =>
-      (i?.moveEvent?.type || '').includes('marketplace::ListEvent'),
+    const status = transaction.effects.status
+    if (status.status !== 'success') {
+      throw new BadRequestException(
+        'This transaction is failed!',
+      );
+    }
+
+    const listEvent = transaction.events.find((i: any) =>
+      (i?.type || '').includes('marketplace::ListEvent'),
     );
 
     if (!listEvent) {
@@ -313,7 +320,7 @@ export class NftService {
         auction: null,
         clientId: null,
         buyType: SaleItemBuyType.BUY_NOW,
-        price: Number(listEvent?.moveEvent?.fields?.price) / Math.pow(10, 9),
+        price: Number(listEvent?.parsedJson?.price) / Math.pow(10, 9),
       },
       nft as any,
       user,
@@ -364,8 +371,16 @@ export class NftService {
   ) {
     const transaction: any =
       await this.blockchainService.getTransactionBuyByTxHash(txhash);
-    const delistEvent = transaction.effects.events.find((i: any) =>
-      (i?.moveEvent?.type || '').includes('marketplace::DelistEvent'),
+
+    const status = transaction.effects.status
+    if (status.status !== 'success') {
+      throw new BadRequestException(
+        'This transaction is failed!',
+      );
+    }
+
+    const delistEvent = transaction.events.find((i: any) =>
+      (i?.type || '').includes('marketplace::DelistEvent'),
     );
     if (!delistEvent) {
       throw new BadRequestException(

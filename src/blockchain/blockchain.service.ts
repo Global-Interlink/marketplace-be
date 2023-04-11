@@ -98,7 +98,7 @@ export class BlockchainService {
     txHash: string,
   ): Promise<SuiTransactionBlockResponse> {
     const provider = getRPCConnection();
-    const transaction = await provider.getTransactionBlock({ digest: txHash, options: { showEffects: true } });
+    const transaction = await provider.getTransactionBlock({ digest: txHash, options: { showEffects: true, showEvents: true } });
     return transaction;
   }
 
