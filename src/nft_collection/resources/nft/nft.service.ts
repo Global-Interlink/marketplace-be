@@ -273,8 +273,8 @@ export class NftService {
       throw new UnprocessableEntityException('Transaction is not success!');
     }
 
-    const events = await this.blockchainService.getEventByEventDigest(transaction.effects.eventsDigest);
-    const buyEvent = events.data.find(() => true);
+    const events = transaction.events;
+    const buyEvent = events.find((e) => e.type.includes('marketplace::BuyEvent'));
 
     if (!buyEvent) {
       throw new BadRequestException('This is not transaction id of buy event!');
