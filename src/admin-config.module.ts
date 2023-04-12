@@ -14,6 +14,7 @@ import AdminJS from 'adminjs';
 import * as dotenv from 'dotenv';
 import { Address } from './blockchain/entities/address.entity';
 import { User } from './user/entities/user.entity';
+import { SignMessage } from './user/entities/signmessage.entity';
 dotenv.config();
 
 const DEFAULT_ADMIN = {
@@ -112,7 +113,8 @@ AdminJS.registerAdapter({
                 },
               },
             },
-            EventLog
+            EventLog,
+            SignMessage
           ],
         },
         auth: {
