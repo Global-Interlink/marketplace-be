@@ -1,5 +1,5 @@
 import { SentryInterceptor } from './../sentry.interceptor';
-import { Injectable, UseInterceptors } from '@nestjs/common';
+import { Injectable, UnprocessableEntityException, UseInterceptors } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
@@ -96,10 +96,19 @@ export class BlockchainService {
 
   async getTransactionBuyByTxHash(
     txHash: string,
+    retries = 3 
   ): Promise<SuiTransactionBlockResponse> {
     const provider = getRPCConnection();
-    const transaction = await provider.getTransactionBlock({ digest: txHash, options: { showEffects: true, showEvents: true } });
-    return transaction;
+    try {
+      const transaction = await provider.getTransactionBlock({ digest: txHash, options: { showEffects: true, showEvents: true } });
+      return transaction;
+    } catch(err) {
+      if (retries > 0) {
+        this.delay(1000);
+        return this.getTransactionBuyByTxHash(txHash, retries - 1);
+      } else
+        throw new UnprocessableEntityException('Transaction not found!');
+    }
   }
 
   async getEventByEventDigest(
@@ -161,5 +170,9 @@ export class BlockchainService {
     }
 
     return candidateEvents;
+  }
+
+  async delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
   }
 }
