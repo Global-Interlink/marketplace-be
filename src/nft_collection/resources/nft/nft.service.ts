@@ -200,7 +200,14 @@ export class NftService {
     if (existed && collection) {
       return await this.nftRepository.update(
         { id: existed.id },
-        { collection: collection },
+        { collection: collection, owner: user },
+      );
+    }
+
+    if (existed && existed.ownerId !== user.id) {
+      return await this.nftRepository.update(
+        { id: existed.id },
+        { owner: user },
       );
     }
 
