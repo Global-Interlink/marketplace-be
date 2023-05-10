@@ -72,15 +72,17 @@ export class BlockchainService {
     } });
     const nftObjects = detailOfObjects.filter((x) => {
       return (
+        x.data?.content?.fields.nft !== undefined || (
         x.data?.content?.fields.name !== undefined &&
-        (x.data?.content?.fields.img_url !== undefined || x.data?.content?.fields.url !== undefined)
+        (x.data?.content?.fields.img_url !== undefined || x.data?.content?.fields.url !== undefined))
       );
     });
     const result = nftObjects.map((nft) => {
+      const image_url = nft.data.content.fields.url || nft.data.content.fields.img_url || nft.data.display.data.image_url
       return {
-        name: nft.data.content.fields.name,
-        description: nft.data.content.fields?.description,
-        url: nft.data.content.fields.url || nft.data.content.fields.img_url,
+        name: nft.data.content.fields?.name || nft.data.display.data.name,
+        description: nft.data.content.fields?.description || nft.data.display.data.description,
+        url: encodeURI(image_url),
         objectId: nft.data.content.fields.id.id,
         owner: nft.data.owner.AddressOwner,
         nftType: nft.data.type,
