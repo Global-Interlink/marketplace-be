@@ -190,7 +190,17 @@ export class NftService {
     });
 
     if (existed && existed?.collection?.id) {
-      return existed;
+      return await this.nftRepository.update(
+        { id: existed.id },
+        {
+          name: nft.name,
+          onChainId: nft.objectId,
+          owner: user,
+          description: nft.description,
+          nftType: nft.nftType,
+          image: nft.url
+        }
+      );
     }
 
     const collection = await this.nftCollectionService.findCollectionByNftUrl(
@@ -201,13 +211,6 @@ export class NftService {
       return await this.nftRepository.update(
         { id: existed.id },
         { collection: collection, owner: user },
-      );
-    }
-
-    if (existed && existed.ownerId !== user.id) {
-      return await this.nftRepository.update(
-        { id: existed.id },
-        { owner: user },
       );
     }
 
@@ -241,7 +244,7 @@ export class NftService {
       .getMany();
 
     let nft_onsale_ids = nft_on_sale.map((nft) => nft.id);
-    
+
     let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')
@@ -251,7 +254,7 @@ export class NftService {
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .where('owner.id = :userId', { userId })
       .orderBy('nfts.createdDate', 'DESC');
-      
+
     if (nft_onsale_ids.length > 0) {
       queryBuilder = queryBuilder.andWhere('nfts.id NOT IN (:...ids)', {
         ids: nft_onsale_ids,
@@ -431,7 +434,7 @@ export class NftService {
               onChainId: nftOnchainId
             }
           });
-          
+
           if (nft && nft.saleStatus === null) {
             console.log(">>> >>> Creating sale item")
             const user = await this.userService.findOneByWalletAddress(userAddress);
@@ -459,7 +462,7 @@ export class NftService {
               onChainId: nftOnchainId
             }
           });
-          
+
           if (nft && nft.saleStatus !== null) {
             console.log(">>> >>> Creating order")
             const user = await this.userService.findOneByWalletAddress(userAddress);
