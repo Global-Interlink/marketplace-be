@@ -203,8 +203,8 @@ export class NftService {
       );
     }
 
-    const collection = await this.nftCollectionService.findCollectionByNftUrl(
-      nft.url,
+    const collection = await this.nftCollectionService.findCollectionByCollectionType(
+      nft.nftType,
     );
 
     if (existed && collection) {

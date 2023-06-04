@@ -145,9 +145,9 @@ export class NftCollectionService {
     return `This action removes a #${id} nftCollection`;
   }
 
-  findCollectionByNftUrl(url: string) {
+  findCollectionByCollectionType(nftType: string) {
     return this.nftCollectionRepository.findOne({
-      where: { nftUrls: Like(`%${url}%`) },
+      where: { collectionType: nftType },
     });
   }
 }
