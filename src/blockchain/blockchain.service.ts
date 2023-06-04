@@ -5,7 +5,7 @@ import { In, Repository } from 'typeorm';
 import { Address } from './entities/address.entity';
 import { Network } from './entities/network.entity';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
-import { ObjectId, SuiTransactionBlockResponse } from '@mysten/sui.js';
+import { ObjectId, PaginatedObjectsResponse, SuiObjectResponse, SuiTransactionBlockResponse } from '@mysten/sui.js';
 import { EventLog } from './entities/event.entity';
 import { getRPCConnection } from "../../src/utils/common";
 
@@ -60,16 +60,8 @@ export class BlockchainService {
   }
 
   async getNftsBySuiAccount(userAddress: string): Promise<NFTDto[]> {
-    const provider = getRPCConnection();
-    const objects = await provider.getOwnedObjects({ owner: userAddress });
-    const detailOfObjects: any = await provider.multiGetObjects({ ids: objects.data.map((x) => x.data?.objectId), options: {
-      showType: true,
-      showContent: true,
-      showOwner: true,
-      showPreviousTransaction: true,
-      showStorageRebate: true,
-      showDisplay: true,
-    } });
+    const objectIds = await this.getAllObjects(userAddress);
+    const detailOfObjects: any = await this.getMultiObjects(objectIds)
     const nftObjects = detailOfObjects.filter((x) => {
       return (
         x.data?.content?.fields.nft !== undefined || (
@@ -91,6 +83,44 @@ export class BlockchainService {
     return result;
   }
 
+  async getMultiObjects(objectIds: string[]): Promise<SuiObjectResponse[]> {
+    const provider = getRPCConnection();
+    const batches = await this.splitArrayIntoBatches(objectIds, 50);
+    const detailObjects = []
+    for (const ids of batches) {
+      const objects: any = await provider.multiGetObjects({ids: ids, options: {
+          showType: true,
+          showContent: true,
+          showOwner: true,
+          showPreviousTransaction: true,
+          showStorageRebate: true,
+          showDisplay: true,
+        }
+      });
+
+      detailObjects.push(...objects);
+    }
+
+    return detailObjects;
+  }
+
+  async getAllObjects(userAddress: string, result?: string[], nextCursor?: any): Promise<string[]> {
+    const provider = getRPCConnection();
+    const objects = await provider.getOwnedObjects({ owner: userAddress, ...(nextCursor && { cursor: nextCursor }) });
+    const objectIds = objects.data.map((x) => x.data?.objectId)
+    const currentResult = result ? [...result, ...objectIds] : objectIds;
+
+    if (!objects.hasNextPage) {
+      return currentResult;
+    }
+
+    if (objects.nextCursor) {
+      return await this.getAllObjects(userAddress, currentResult, objects.nextCursor);
+    }
+
+    return currentResult;
+  }
+
   async getNftsByUserAddress(userAddress: string): Promise<NFTDto[]> {
     const data = this.getNftsBySuiAccount(userAddress);
     return data;
@@ -98,7 +128,7 @@ export class BlockchainService {
 
   async getTransactionBuyByTxHash(
     txHash: string,
-    retries = 3 
+    retries = 3
   ): Promise<SuiTransactionBlockResponse> {
     const provider = getRPCConnection();
     try {
@@ -176,5 +206,17 @@ export class BlockchainService {
 
   async delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
+  }
+
+  async splitArrayIntoBatches<T>(array: T[], batchSize: number): Promise<T[][]> {
+    const batches: T[][] = [];
+    const length = array.length;
+
+    for (let i = 0; i < length; i += batchSize) {
+      const batch = array.slice(i, i + batchSize);
+      batches.push(batch);
+    }
+
+    return batches;
   }
 }
