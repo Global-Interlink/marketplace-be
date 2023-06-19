@@ -291,7 +291,7 @@ export class NftService {
     }
 
     const buyer = await this.userService.findOneByWalletAddress(
-      buyEvent.parsedJson.actor,
+      buyEvent.parsedJson.buyer || buyEvent.parsedJson.actor,
       chain,
     );
     const saleItem = await this.saleItemService.findOneOnSaleByNftId(id);
@@ -455,7 +455,7 @@ export class NftService {
         else if (eventType && eventType.includes('marketplace::BuyEvent')) {
           console.log(`=== Handling BUY event: ${JSON.stringify(eventData)}`);
           const nftOnchainId = eventData.item_id;
-          const userAddress = eventData.actor;
+          const userAddress = eventData.buyer || eventData.actor;
           const nft = await this.nftRepository.findOne({
             relations: { saleItems: true },
             where: {
