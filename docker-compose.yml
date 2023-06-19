@@ -1,10 +1,10 @@
 version: '3'
-services: 
+services:
   be_db:
     image: postgres:14.4
     env_file:
       - ./.env
-    environment: 
+    environment:
       - POSTGRES_USER=${DATABASE_USER}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - POSTGRES_DB=${DATABASE_NAME}
@@ -22,18 +22,18 @@ services:
       retries: 5
 
   be:
-    build: 
+    build:
       context: .
       dockerfile: ./Dockerfile
     env_file:
       - ./.env
-    ports: 
+    ports:
       - "${APP_PORT}:3000" # expose-to-the-world : only-in-the-docker
     container_name: mkpl-be-${ENV}
-    depends_on: 
+    depends_on:
       be_db:
         condition: service_healthy
-    volumes: 
+    volumes:
       - .:/app
       - /app/node_modules
     command:
