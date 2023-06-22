@@ -1,5 +1,5 @@
 import { User } from 'src/user/entities/user.entity';
-import { Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
@@ -232,6 +232,8 @@ export class NftService {
       user.address.address,
     );
 
+    const nftOnchainIds = nfts.map((nft) => nft.objectId);
+    await this.deleteNfts(user.id, nftOnchainIds);
     await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
 
     const userId = user.id;
@@ -471,5 +473,13 @@ export class NftService {
           }
         }
     }
+  }
+
+  async deleteNfts(userId, nftOnchainIds) {
+    await this.nftRepository.delete(
+      { ownerId: userId,
+        onChainId: Not(In(nftOnchainIds))
+      }
+    );
   }
 }
