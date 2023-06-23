@@ -1,5 +1,5 @@
 import { User } from 'src/user/entities/user.entity';
-import { Brackets, In, Not, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
@@ -231,7 +231,7 @@ export class NftService {
     );
 
     const nftOnchainIds = nfts.map((nft) => nft.objectId);
-    await this.deleteNfts(user.id, nftOnchainIds);
+    await this.removeOwnerNfts(user.id, nftOnchainIds);
     await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
 
     const userId = user.id;
@@ -473,23 +473,16 @@ export class NftService {
     }
   }
 
-  async deleteNfts(userId, nftOnchainIds) {
-    const query = this.nftRepository
+  async removeOwnerNfts(userId, nftOnchainIds) {
+    const nftSelling = await this.nftRepository
       .createQueryBuilder('nfts')
-      .leftJoin('nfts.saleItems', 'saleItems')
+      .innerJoin('nfts.saleItems', 'saleItems')
       .where('nfts.ownerId = :userId', { userId })
-      .andWhere(
-        new Brackets(qb => qb.where('saleItems.nftId IS NULL')
-          .orWhere('saleItems.state = :state', { state: SaleItemState.CANCELLED })
-        )
-      );
+      .andWhere('saleItems.state IN (:states)', { states: [SaleItemState.ON_SALE, SaleItemState.VERIFING] })
+      .getMany()
 
-    if (nftOnchainIds.length > 0) {
-      query.andWhere('nfts.onChainId NOT IN (:...nftOnchainIds)', { nftOnchainIds })
-    }
-    const nfts = query.getMany();
     await this.nftRepository.update(
-      { id: In((await nfts).map((e) => e.id)) },
+      { onChainId: Not(In([...nftOnchainIds, ...nftSelling.map((e) => e.onChainId)])) },
       { ownerId: null }
     )
   }
