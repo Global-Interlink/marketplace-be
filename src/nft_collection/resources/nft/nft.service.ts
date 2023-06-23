@@ -483,7 +483,7 @@ export class NftService {
           .orWhere('saleItems.state = :state', { state: SaleItemState.CANCELLED })
         )
       );
-    console.log('nftOnchainIds', typeof(nftOnchainIds));
+
     if (nftOnchainIds.length > 0) {
       query.andWhere('nfts.onChainId NOT IN (:...nftOnchainIds)', { nftOnchainIds })
     }
@@ -492,11 +492,5 @@ export class NftService {
       { id: In((await nfts).map((e) => e.id)) },
       { ownerId: null }
     )
-
-    // await this.nftRepository.delete(
-    //   { ownerId: userId,
-    //     onChainId: Not(In(nftOnchainIds))
-    //   }
-    // );
   }
 }
