@@ -1,5 +1,5 @@
 import { User } from 'src/user/entities/user.entity';
-import { In, Not, Repository } from 'typeorm';
+import { Brackets, In, Not, Repository } from 'typeorm';
 import {
   BadRequestException,
   Injectable,
@@ -189,17 +189,19 @@ export class NftService {
       where: { onChainId: nft.objectId },
     });
 
+    const nftDataUpdate = {
+      name: nft.name,
+      onChainId: nft.objectId,
+      owner: user,
+      description: nft.description,
+      nftType: nft.nftType,
+      image: nft.url
+    }
+
     if (existed && existed?.collection?.id) {
       return await this.nftRepository.update(
         { id: existed.id },
-        {
-          name: nft.name,
-          onChainId: nft.objectId,
-          owner: user,
-          description: nft.description,
-          nftType: nft.nftType,
-          image: nft.url
-        }
+        nftDataUpdate
       );
     }
 
@@ -207,24 +209,20 @@ export class NftService {
       nft.nftType,
     );
 
-    if (existed && collection) {
+    if (existed) {
       return await this.nftRepository.update(
         { id: existed.id },
-        { collection: collection, owner: user },
+        {
+          ...(collection && { collection }),
+          ...nftDataUpdate
+        },
       );
     }
 
-    if (!existed) {
-      return await this.nftRepository.save({
-        name: nft.name,
-        onChainId: nft.objectId,
-        owner: user,
-        description: nft.description,
-        nftType: nft.nftType,
-        image: nft.url,
-        ...(collection && { collection }),
-      });
-    }
+    return await this.nftRepository.save({
+      ...nftDataUpdate,
+      ...(collection && { collection }),
+    });
   }
 
   async getAllNftByUser(user: User, query: PaginateQuery) {
@@ -476,10 +474,29 @@ export class NftService {
   }
 
   async deleteNfts(userId, nftOnchainIds) {
-    await this.nftRepository.delete(
-      { ownerId: userId,
-        onChainId: Not(In(nftOnchainIds))
-      }
-    );
+    const query = this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoin('nfts.saleItems', 'saleItems')
+      .where('nfts.ownerId = :userId', { userId })
+      .andWhere(
+        new Brackets(qb => qb.where('saleItems.nftId IS NULL')
+          .orWhere('saleItems.state = :state', { state: SaleItemState.CANCELLED })
+        )
+      );
+    console.log('nftOnchainIds', typeof(nftOnchainIds));
+    if (nftOnchainIds.length > 0) {
+      query.andWhere('nfts.onChainId NOT IN (:...nftOnchainIds)', { nftOnchainIds })
+    }
+    const nfts = query.getMany();
+    await this.nftRepository.update(
+      { id: In((await nfts).map((e) => e.id)) },
+      { ownerId: null }
+    )
+
+    // await this.nftRepository.delete(
+    //   { ownerId: userId,
+    //     onChainId: Not(In(nftOnchainIds))
+    //   }
+    // );
   }
 }
