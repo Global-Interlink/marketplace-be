@@ -16,9 +16,9 @@ export class CronService {
     return await this.nftService.syncMarketplaceEventToNft();
   }
 
-  @UseInterceptors(SentryInterceptor)
-  @Cron(process.env.CRONTIME || '0 13 * * *')
-  async syncOwnerNft() {
-    return await this.nftService.syncOwnerNfts();
-  }
+  // @UseInterceptors(SentryInterceptor)
+  // @Cron(process.env.CRONTIME || '0 13 * * *')
+  // async syncOwnerNft() {
+  //   return await this.nftService.syncOwnerNfts();
+  // }
 }

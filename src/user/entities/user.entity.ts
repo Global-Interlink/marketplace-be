@@ -23,7 +23,7 @@ export class User extends BaseEntity {
   id: string;
 
   @Column({type: 'uuid', nullable: false })
-  addressId!: number;
+  addressId!: string;
 
   @OneToOne(() => Address, (address) => address.user)
   @JoinColumn()

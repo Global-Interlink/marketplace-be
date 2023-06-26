@@ -37,25 +37,25 @@ export class NftService {
     private userService: UserService,
     private orderService: OrderService,
     private saleItemService: SaleItemService,
-    @InjectRepository(Address)
-    private addressRepository: Repository<Address>
+    // @InjectRepository(Address)
+    // private addressRepository: Repository<Address>
   ) {}
 
-  async syncOwnerNfts() {
-    console.log('Start sync owner nft ====================>');
-    const users = await this.userService.allUser();
-    for(const user of users) {
-      const address = await this.addressRepository.findOne({where: {id: user.addressId}});
-      const nfts = await this.blockchainService.getNftsByUserAddress(
-        address.address,
-      );
+  // async syncOwnerNfts() {
+  //   console.log('Start sync owner nft ====================>');
+  //   const users = await this.userService.allUser();
+  //   for(const user of users) {
+  //     const address = await this.addressRepository.findOne({where: {id: user.addressId}});
+  //     const nfts = await this.blockchainService.getNftsByUserAddress(
+  //       address.address,
+  //     );
 
-      const nftOnchainIds = nfts.map((nft) => nft.objectId);
-      await this.removeOwnerNfts(user.id, nftOnchainIds);
-      await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
-    }
-    console.log('End sync owner nft <====================');
-  }
+  //     const nftOnchainIds = nfts.map((nft) => nft.objectId);
+  //     await this.removeOwnerNfts(user.id, nftOnchainIds);
+  //     await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
+  //   }
+  //   console.log('End sync owner nft <====================');
+  // }
 
   async create(
     createNftDto: CreateNftDto,
