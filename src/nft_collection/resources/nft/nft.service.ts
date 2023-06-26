@@ -478,7 +478,7 @@ export class NftService {
       .createQueryBuilder('nfts')
       .innerJoin('nfts.saleItems', 'saleItems')
       .where('nfts.ownerId = :userId', { userId })
-      .andWhere('saleItems.state IN (:states)', { states: [SaleItemState.ON_SALE, SaleItemState.VERIFING] })
+      .andWhere('saleItems.state IN (:...states)', { states: [SaleItemState.ON_SALE, SaleItemState.VERIFING] })
       .getMany()
 
     await this.nftRepository.update(
