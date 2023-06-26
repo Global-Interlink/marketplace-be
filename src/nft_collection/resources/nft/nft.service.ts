@@ -24,6 +24,7 @@ import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
+import { Address } from 'src/blockchain/entities/address.entity';
 
 
 @Injectable()
@@ -36,7 +37,25 @@ export class NftService {
     private userService: UserService,
     private orderService: OrderService,
     private saleItemService: SaleItemService,
+    // @InjectRepository(Address)
+    // private addressRepository: Repository<Address>
   ) {}
+
+  // async syncOwnerNfts() {
+  //   console.log('Start sync owner nft ====================>');
+  //   const users = await this.userService.allUser();
+  //   for(const user of users) {
+  //     const address = await this.addressRepository.findOne({where: {id: user.addressId}});
+  //     const nfts = await this.blockchainService.getNftsByUserAddress(
+  //       address.address,
+  //     );
+
+  //     const nftOnchainIds = nfts.map((nft) => nft.objectId);
+  //     await this.removeOwnerNfts(user.id, nftOnchainIds);
+  //     await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
+  //   }
+  //   console.log('End sync owner nft <====================');
+  // }
 
   async create(
     createNftDto: CreateNftDto,
@@ -482,7 +501,7 @@ export class NftService {
       .getMany()
 
     await this.nftRepository.update(
-      { onChainId: Not(In([...nftOnchainIds, ...nftSelling.map((e) => e.onChainId)])) },
+      { onChainId: Not(In([...nftOnchainIds, ...nftSelling.map((e) => e.onChainId)])), ownerId: userId },
       { ownerId: null }
     )
   }

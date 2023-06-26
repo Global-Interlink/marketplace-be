@@ -22,6 +22,10 @@ export class UserService {
     private blockchainService: BlockchainService,
   ) {}
 
+  async allUser() {
+    return this.usersRepository.find()
+  }
+
   async createUser(createUserDto: CreateUserDto) {
     const { walletAddress, chain } = createUserDto;
     const address = await this.blockchainService.createWallet(
@@ -53,9 +57,9 @@ export class UserService {
       .where('owner.id = :userId', { userId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
       .getMany();
-    
+
     let nft_onsale_ids = nftOnSale.map((nft) => nft.id);
-  
+
     let queryBuilder = this.nftRepository
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.collection', 'collection')

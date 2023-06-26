@@ -73,7 +73,7 @@ export class BlockchainService {
       const image_url = nft.data.content.fields.url || nft.data.content.fields.img_url || nft.data.display.data.image_url
       return {
         name: nft.data.content.fields?.name || nft.data.display.data.name,
-        description: nft.data.content.fields?.description || nft.data.display.data.description,
+        description: nft.data.content.fields?.description || nft.data.display.data?.description || null,
         url: encodeURI(image_url),
         objectId: nft.data.content.fields.id.id,
         owner: nft.data.owner.AddressOwner,
