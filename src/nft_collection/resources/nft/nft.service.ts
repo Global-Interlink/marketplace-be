@@ -38,6 +38,19 @@ export class NftService {
     private saleItemService: SaleItemService,
   ) {}
 
+  async syncOwnerNfts() {
+    const users = await this.userService.allUser();
+    for(const user of users) {
+      const nfts = await this.blockchainService.getNftsByUserAddress(
+        user.address.address,
+      );
+
+      const nftOnchainIds = nfts.map((nft) => nft.objectId);
+      await this.removeOwnerNfts(user.id, nftOnchainIds);
+      await Promise.all(nfts.map((i) => this.saveNftFromOnChainData(i, user)));
+    }
+  }
+
   async create(
     createNftDto: CreateNftDto,
     image: Express.Multer.File,
@@ -482,7 +495,7 @@ export class NftService {
       .getMany()
 
     await this.nftRepository.update(
-      { onChainId: Not(In([...nftOnchainIds, ...nftSelling.map((e) => e.onChainId)])) },
+      { onChainId: Not(In([...nftOnchainIds, ...nftSelling.map((e) => e.onChainId)])), ownerId: userId },
       { ownerId: null }
     )
   }
