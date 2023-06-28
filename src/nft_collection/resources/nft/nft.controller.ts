@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ClassSerializerInterceptor,
+  Query,
 } from '@nestjs/common';
 import { NftService } from './nft.service';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -22,6 +23,7 @@ import {
   UpdateFromBuyEventInputDto,
   UpdatePutOnSaleEventBodyDto,
 } from 'src/nft_collection/dto/common';
+import { RangePriceDto } from 'src/nft_collection/dto/rang-price.dto';
 
 @UseInterceptors(SentryInterceptor)
 @UseInterceptors(ClassSerializerInterceptor)
@@ -52,9 +54,10 @@ export class NftController {
   async findByCollection(
     @Param('idCollection') id: string,
     @Paginate() query: PaginateQuery,
+    @Query()rangePrice:RangePriceDto
   ) {
     const collection = await this.nftCollectionService.findOne(id);
-    return await this.nftService.findByCollection(query, collection);
+    return await this.nftService.findByCollection(query, collection,rangePrice);
   }
 
   @UseGuards(JwtAuthGuard)
