@@ -189,6 +189,12 @@ export class NftService {
       },
     });
 
+    if (!nft || !nft.collection?.id) {
+      return {
+        data: []
+      }
+    }
+
     const data = await this.nftRepository.find({
       relations: {
         collection: true,
@@ -199,11 +205,9 @@ export class NftService {
       },
       where: {
         id: Not(nftId),
-        ...(!!nft?.collection?.id && {
-          collection: {
-            id: nft?.collection.id,
-          },
-        }),
+        collection: {
+          id: nft.collection.id,
+        },
         saleItems: {
           state: SaleItemState.ON_SALE,
         },
