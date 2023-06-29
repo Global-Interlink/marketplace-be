@@ -42,7 +42,7 @@ export class SaleItem extends BaseEntity {
     nft: NFT
 
     @Column({type: "decimal", precision: 24, scale: 6, default: 0})
-    @Min(0)    
+    // @Min(0)    
     price: number
 
     @Column({

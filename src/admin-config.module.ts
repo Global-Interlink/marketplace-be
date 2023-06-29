@@ -15,6 +15,8 @@ import * as dotenv from 'dotenv';
 import { Address } from './blockchain/entities/address.entity';
 import { User } from './user/entities/user.entity';
 import { SignMessage } from './user/entities/signmessage.entity';
+import { validate } from 'class-validator';
+
 dotenv.config();
 
 const DEFAULT_ADMIN = {
@@ -28,7 +30,7 @@ const authenticate = async (email: string, password: string) => {
   }
   return null;
 };
-
+AdminJSTypeorm.Resource.validate = validate;
 AdminJS.registerAdapter({
   Resource: AdminJSTypeorm.Resource,
   Database: AdminJSTypeorm.Database,
@@ -58,8 +60,8 @@ AdminJS.registerAdapter({
               options: {
                 properties: {
                   id: {
-                      isTitle: 'true',
-                  }
+                    isTitle: 'true',
+                  },
                 },
               },
             },
@@ -114,7 +116,7 @@ AdminJS.registerAdapter({
               },
             },
             EventLog,
-            SignMessage
+            SignMessage,
           ],
         },
         auth: {

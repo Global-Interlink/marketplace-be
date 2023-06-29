@@ -24,10 +24,12 @@ import {
   UpdatePutOnSaleEventBodyDto,
 } from 'src/nft_collection/dto/common';
 import { RangePriceDto } from 'src/nft_collection/dto/rang-price.dto';
+import { ApiTags } from '@nestjs/swagger';
 
 @UseInterceptors(SentryInterceptor)
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('/api/v1/nft')
+@ApiTags("NFT")
 export class NftController {
   constructor(
     private readonly nftService: NftService,
@@ -54,10 +56,19 @@ export class NftController {
   async findByCollection(
     @Param('idCollection') id: string,
     @Paginate() query: PaginateQuery,
-    @Query()rangePrice:RangePriceDto
+    @Query() rangePrice: RangePriceDto,
   ) {
     const collection = await this.nftCollectionService.findOne(id);
-    return await this.nftService.findByCollection(query, collection,rangePrice);
+    return await this.nftService.findByCollection(
+      query,
+      collection,
+      rangePrice,
+    );
+  }
+
+  @Get('/range-price/:idCollection')
+  async getMinMaxPriceCollection(@Param('idCollection') id: string) {
+    return this.nftService.getMinMaxPrice(id);
   }
 
   @UseGuards(JwtAuthGuard)
