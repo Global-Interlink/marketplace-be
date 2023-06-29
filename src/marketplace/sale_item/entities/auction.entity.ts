@@ -23,7 +23,7 @@ export class Auction extends BaseEntity {
     expiredAt: Date
 
     @Column({type: "decimal", precision: 24, scale: 6, default: 0})
-    @Min(0)
+    // @Min(0)
     startPrice: number
 
     @Column({
@@ -33,7 +33,7 @@ export class Auction extends BaseEntity {
         default: 0,
         nullable: true
     })
-    @Min(0)
+    // @Min(0)
     reservePrice: number
 
     @Column({

@@ -35,9 +35,8 @@ export class NftService {
     private blockchainService: BlockchainService,
     private userService: UserService,
     private orderService: OrderService,
-    private saleItemService: SaleItemService, // @InjectRepository(Address)
-  ) // private addressRepository: Repository<Address>
-  {}
+    private saleItemService: SaleItemService, // @InjectRepository(Address) // private addressRepository: Repository<Address>
+  ) {}
 
   // async syncOwnerNfts() {
   //   console.log('Start sync owner nft ====================>');
@@ -102,10 +101,13 @@ export class NftService {
     // .orderBy('nfts.createdDate', 'DESC')
     // .orderBy('saleItems.price', 'ASC')
     if (queryRangePrice.minPrice && queryRangePrice.maxPrice) {
-      console.log(queryRangePrice,"queryRangePrice")
+      console.log(queryRangePrice, 'queryRangePrice');
       queryBuilder.andWhere(
         'saleItems.price >= :minPrice AND saleItems.price <= :maxPrice',
-        { minPrice: Number(queryRangePrice.minPrice), maxPrice: Number(queryRangePrice.maxPrice) },
+        {
+          minPrice: Number(queryRangePrice.minPrice),
+          maxPrice: Number(queryRangePrice.maxPrice),
+        },
       );
     }
     return paginate(query, queryBuilder, {
@@ -116,6 +118,19 @@ export class NftService {
       filterableColumns: {},
       relations: ['saleItems'],
     });
+  }
+
+  async getMinMaxPrice(collectionId: string) {
+    const queryBuilder = this.nftRepository
+      .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.saleItems', 'saleItems')
+      .leftJoinAndSelect('nfts.collection', 'collection')
+      .select(
+        'MIN(saleItems.price) as minPriceNft , MAX(saleItems.price) as maxPriceNft',
+      )
+      .where('collection.id = :collectionId', { collectionId });
+
+    return queryBuilder.getRawOne();
   }
 
   async findAllByUser(
