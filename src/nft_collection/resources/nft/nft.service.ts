@@ -87,6 +87,7 @@ export class NftService {
     collection: NFTCollection,
     queryRangePrice: any,
   ) {
+    console.log(queryRangePrice, 'eeee');
     const collectionId = collection.id;
     // const querySort =
     const queryBuilder = this.nftRepository
@@ -100,8 +101,8 @@ export class NftService {
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE });
     // .orderBy('nfts.createdDate', 'DESC')
     // .orderBy('saleItems.price', 'ASC')
+
     if (queryRangePrice.minPrice && queryRangePrice.maxPrice) {
-      console.log(queryRangePrice, 'queryRangePrice');
       queryBuilder.andWhere(
         'saleItems.price >= :minPrice AND saleItems.price <= :maxPrice',
         {
@@ -110,8 +111,13 @@ export class NftService {
         },
       );
     }
+
+    if (queryRangePrice.sortBy) {
+      const [sortPrice, typeSort] = queryRangePrice.sortBy.split(':');
+      queryBuilder.orderBy(sortPrice, typeSort);
+    }
     return paginate(query, queryBuilder, {
-      sortableColumns: ['createdDate', 'saleItems.price'],
+      sortableColumns: ['createdDate'],
       nullSort: 'last',
       searchableColumns: ['name', 'description'],
       defaultSortBy: [['id', 'DESC']],

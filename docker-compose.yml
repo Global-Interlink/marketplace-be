@@ -30,9 +30,9 @@ services:
     ports:
       - "${APP_PORT}:3000" # expose-to-the-world : only-in-the-docker
     container_name: mkpl-be-${ENV}
-    depends_on:
-      be_db:
-        condition: service_healthy
+    # depends_on:
+    #   be_db:
+    #     condition: service_healthy
     volumes:
       - .:/app
       - /app/node_modules
@@ -41,7 +41,7 @@ services:
           - -c
           - |
               npx typeorm -d dist/db/data-source.js migration:run
-              npm run start
+              npm run start:dev
     networks:
       - be_net
 
