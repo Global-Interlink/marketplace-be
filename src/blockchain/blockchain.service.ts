@@ -61,14 +61,8 @@ export class BlockchainService {
 
   async getNftsBySuiAccount(userAddress: string): Promise<NFTDto[]> {
     const objectIds = await this.getAllObjects(userAddress);
-    const detailOfObjects: any = await this.getMultiObjects(objectIds)
-    const nftObjects = detailOfObjects.filter((x) => {
-      return (
-        x.data?.content?.fields.nft !== undefined || (
-        x.data?.content?.fields.name !== undefined &&
-        (x.data?.content?.fields.img_url !== undefined || x.data?.content?.fields.url !== undefined))
-      );
-    });
+    const nftObjects = await this.getNftObjectsFromObjectIds(objectIds);
+
     const result = nftObjects.map((nft) => {
       const image_url = nft.data.content.fields.url || nft.data.content.fields.img_url || nft.data.display.data.image_url
       return {
@@ -78,9 +72,60 @@ export class BlockchainService {
         objectId: nft.data.content.fields.id.id,
         owner: nft.data.owner.AddressOwner,
         nftType: nft.data.type,
+        kioksId: nft.kioksId,
       };
     });
+
     return result;
+  }
+
+  async getNftObjectsFromObjectIds(objectIds, kioksObjectId?) {
+    const detailOfObjects: any = await this.getMultiObjects(objectIds)
+
+    let nftObjects = [];
+    let dynamicFieldObjectIds = [];
+
+    for (const obj of detailOfObjects) {
+      if (obj.data?.content?.fields.nft !== undefined || (obj.data?.content?.fields.name !== undefined && 
+        (obj.data?.content?.fields.img_url !== undefined || obj.data?.content?.fields.url !== undefined))) {
+        nftObjects.push({...obj, kioksId: kioksObjectId});
+      } else if (obj.data?.type.includes('kiosk::KioskOwnerCap')) {
+        dynamicFieldObjectIds.push(obj.data?.content.fields.for);
+      }
+    }
+
+    if (dynamicFieldObjectIds.length > 0) {
+      for (const dynamicFieldId of dynamicFieldObjectIds) {
+        const itemObjectIds = await this.getItemIdFromDynamicFields(dynamicFieldId);
+        
+        if (itemObjectIds.length > 0) {
+          nftObjects.push(...(await this.getNftObjectsFromObjectIds(itemObjectIds, dynamicFieldId)));
+        }
+      }
+    }
+
+    return nftObjects;
+  }
+
+  async getItemIdFromDynamicFields(kioksObjectId: string, result?: string[], nextCursor?: any): Promise<string[]> {
+    const provider = getRPCConnection();
+    const dynamicFields = await provider.getDynamicFields({parentId: kioksObjectId, ...(nextCursor && { cursor: nextCursor }) });
+    const nftObjectIds = dynamicFields.data.filter((x) => {
+      return (
+        x.name.type.includes('kiosk::Item')
+      );
+    }).map(obj => obj.objectId);
+    const currentResult = result ? [...result, ...nftObjectIds] : nftObjectIds;
+
+    if (!dynamicFields.hasNextPage) {
+      return currentResult;
+    }
+
+    if (dynamicFields.nextCursor) {
+      return await this.getItemIdFromDynamicFields(kioksObjectId, currentResult, dynamicFields.nextCursor);
+    }
+
+    return currentResult;
   }
 
   async getMultiObjects(objectIds: string[]): Promise<SuiObjectResponse[]> {

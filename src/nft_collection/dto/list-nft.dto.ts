@@ -5,4 +5,5 @@ export class NFTDto {
   objectId: string;
   owner: string;
   nftType: string;
+  kioksId: string;
 }

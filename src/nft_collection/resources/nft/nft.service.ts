@@ -257,6 +257,7 @@ export class NftService {
       description: nft.description,
       nftType: nft.nftType,
       image: nft.url,
+      kioksId: nft.kioksId,
     };
 
     if (existed && existed?.collection?.id) {
