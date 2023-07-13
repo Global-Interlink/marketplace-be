@@ -72,14 +72,15 @@ export class BlockchainService {
         objectId: nft.data.content.fields.id.id,
         owner: nft.data.owner.AddressOwner,
         nftType: nft.data.type,
-        kioksId: nft.kioksId,
+        kioskId: nft.kioskId,
+        kioskOwnerCapId: nft.kioskOwnerCapId,
       };
     });
 
     return result;
   }
 
-  async getNftObjectsFromObjectIds(objectIds, kioksObjectId?) {
+  async getNftObjectsFromObjectIds(objectIds, kioskObjectId?, kioskOwnerCapId?) {
     const detailOfObjects: any = await this.getMultiObjects(objectIds)
 
     let nftObjects = [];
@@ -88,18 +89,21 @@ export class BlockchainService {
     for (const obj of detailOfObjects) {
       if (obj.data?.content?.fields.nft !== undefined || (obj.data?.content?.fields.name !== undefined && 
         (obj.data?.content?.fields.img_url !== undefined || obj.data?.content?.fields.url !== undefined))) {
-        nftObjects.push({...obj, kioksId: kioksObjectId});
+        nftObjects.push({...obj, kioskId: kioskObjectId, kioskOwnerCapId: kioskOwnerCapId });
       } else if (obj.data?.type.includes('kiosk::KioskOwnerCap')) {
-        dynamicFieldObjectIds.push(obj.data?.content.fields.for);
+        dynamicFieldObjectIds.push({
+          kioskId: obj.data?.content.fields.for,
+          kioskObjectId: obj.data?.objectId,
+        });
       }
     }
 
     if (dynamicFieldObjectIds.length > 0) {
-      for (const dynamicFieldId of dynamicFieldObjectIds) {
-        const itemObjectIds = await this.getItemIdFromDynamicFields(dynamicFieldId);
+      for (const data of dynamicFieldObjectIds) {
+        const itemObjectIds = await this.getItemIdFromDynamicFields(data.kioskId);
         
         if (itemObjectIds.length > 0) {
-          nftObjects.push(...(await this.getNftObjectsFromObjectIds(itemObjectIds, dynamicFieldId)));
+          nftObjects.push(...(await this.getNftObjectsFromObjectIds(itemObjectIds, data.kioskId, data.kioskObjectId)));
         }
       }
     }
@@ -107,9 +111,9 @@ export class BlockchainService {
     return nftObjects;
   }
 
-  async getItemIdFromDynamicFields(kioksObjectId: string, result?: string[], nextCursor?: any): Promise<string[]> {
+  async getItemIdFromDynamicFields(kioskObjectId: string, result?: string[], nextCursor?: any): Promise<string[]> {
     const provider = getRPCConnection();
-    const dynamicFields = await provider.getDynamicFields({parentId: kioksObjectId, ...(nextCursor && { cursor: nextCursor }) });
+    const dynamicFields = await provider.getDynamicFields({parentId: kioskObjectId, ...(nextCursor && { cursor: nextCursor }) });
     const nftObjectIds = dynamicFields.data.filter((x) => {
       return (
         x.name.type.includes('kiosk::Item')
@@ -122,7 +126,7 @@ export class BlockchainService {
     }
 
     if (dynamicFields.nextCursor) {
-      return await this.getItemIdFromDynamicFields(kioksObjectId, currentResult, dynamicFields.nextCursor);
+      return await this.getItemIdFromDynamicFields(kioskObjectId, currentResult, dynamicFields.nextCursor);
     }
 
     return currentResult;

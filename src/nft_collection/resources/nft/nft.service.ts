@@ -257,7 +257,8 @@ export class NftService {
       description: nft.description,
       nftType: nft.nftType,
       image: nft.url,
-      kioksId: nft.kioksId,
+      kioskId: nft.kioskId,
+      kioskOwnerCapId: nft.kioskOwnerCapId,
     };
 
     if (existed && existed?.collection?.id) {
