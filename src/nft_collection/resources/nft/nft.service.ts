@@ -535,6 +535,86 @@ export class NftService {
       }
     }
   }
+  //sync event kiosk: list, delist, buy
+  async syncKioskEventToNft() {
+    const newEvents = await this.blockchainService.getNewEventsInModule();
+    console.log(`${newEvents.length} new events`);
+    for (let i = 0; i < newEvents.length; i++) {
+      const eventData = newEvents[i].parsedJson;
+      const eventType = newEvents[i].type;
+      console.log('Event type', eventType);
+      if (eventType && eventType.includes('kiosk::ItemDelisted')) {
+        console.log(`=== Handling DELIST event: ${JSON.stringify(eventData)}`);
+        const nftOnchainId = eventData.parsedJson.id;
+        const userAddress = eventData.sender;
+        const nft = await this.nftRepository.findOne({
+          relations: { saleItems: true },
+          where: {
+            onChainId: nftOnchainId,
+          },
+        });
+        if (nft && nft.saleStatus !== null) {
+          console.log('>>> >>> Cancelling sale item');
+          const user = await this.userService.findOneByWalletAddress(
+            userAddress,
+          );
+          await this.doDelistNft(nft.id, user);
+        }
+      } else if (eventType && eventType.includes('kiosk::ItemListed')) {
+        console.log(`=== Handling LIST event: ${JSON.stringify(eventData)}`);
+        const price = eventData.price;
+        const nftOnchainId = eventData.parsedJson.id;
+        const userAddress = eventData.sender;
+        const nft = await this.nftRepository.findOne({
+          relations: { saleItems: true },
+          where: {
+            onChainId: nftOnchainId,
+          },
+        });
+
+        if (nft && nft.saleStatus === null) {
+          console.log('>>> >>> Creating sale item');
+          const user = await this.userService.findOneByWalletAddress(
+            userAddress,
+          );
+          await this.saleItemService.create(
+            {
+              signature: null,
+              nftId: nft.id,
+              auction: null,
+              clientId: null,
+              buyType: SaleItemBuyType.BUY_NOW,
+              price: Number(price) / Math.pow(10, 9),
+            },
+            nft as any,
+            user,
+          );
+        }
+      }//not fixed yet 
+      else if (eventType && eventType.includes('marketplace::BuyEvent')) {
+        console.log(`=== Handling BUY event: ${JSON.stringify(eventData)}`);
+        const nftOnchainId = eventData.item_id;
+        const userAddress = eventData.buyer || eventData.actor;
+        const nft = await this.nftRepository.findOne({
+          relations: { saleItems: true },
+          where: {
+            onChainId: nftOnchainId,
+          },
+        });
+
+        if (nft && nft.saleStatus !== null) {
+          console.log('>>> >>> Creating order');
+          const user = await this.userService.findOneByWalletAddress(
+            userAddress,
+          );
+          const saleItem = await this.saleItemService.findOneOnSaleByNftId(
+            nft.id,
+          );
+          await this.orderService.create({ saleItemIds: [saleItem.id] }, user);
+        }
+      }
+    }
+  }
 
   async removeOwnerNfts(userId, nftOnchainIds) {
     const nftSelling = await this.nftRepository
