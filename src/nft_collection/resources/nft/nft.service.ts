@@ -113,8 +113,8 @@ export class NftService {
     }
 
     if (queryRangePrice.nameNft) {
-      queryBuilder.andWhere(`nfts.name like :nameNft`, {
-        nameNft: `%${queryRangePrice.nameNft}%`,
+      queryBuilder.andWhere(`LOWER(nfts.name) like :nameNft`, {
+        nameNft: `%${queryRangePrice.nameNft.toLowerCase()}%`,
       });
     }
 
