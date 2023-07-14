@@ -47,7 +47,12 @@ export class NFT extends BaseEntity {
   @Column({
     nullable: true,
   })
-  kioksId: string
+  kioskId: string
+
+  @Column({
+    nullable: true,
+  })
+  kioskOwnerCapId: string
 
   @OneToMany(() => NFTProperty, (property) => property.nft)
   properties: NFTProperty[];
