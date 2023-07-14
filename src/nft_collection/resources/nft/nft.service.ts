@@ -36,7 +36,9 @@ export class NftService {
     private userService: UserService,
     private orderService: OrderService,
     private saleItemService: SaleItemService, // @InjectRepository(Address) // private addressRepository: Repository<Address>
-  ) {}
+  ) {
+    
+  }
 
   // async syncOwnerNfts() {
   //   console.log('Start sync owner nft ====================>');
@@ -53,7 +55,7 @@ export class NftService {
   //   }
   //   console.log('End sync owner nft <====================');
   // }
-
+    
   async create(
     createNftDto: CreateNftDto,
     image: Express.Multer.File,
@@ -346,7 +348,7 @@ export class NftService {
 
     const events = transaction.events;
     const buyEvent = events.find((e) =>
-      e.type.includes('marketplace::BuyEvent'||'kiosk::ItemPurchased'),
+      e.type.includes('marketplace::BuyEvent'||'${process.env.KIOSK_MODULE_NAME}::ItemPurchased'),
     );
 
     if (!buyEvent) {
@@ -377,7 +379,7 @@ export class NftService {
     }
 
     const listEvent = transaction.events.find((i: any) =>
-      (i?.type || '').includes('marketplace::ListEvent'||'kiosk::ItemListed'),
+      (i?.type || '').includes('marketplace::ListEvent'||'${process.env.KIOSK_MODULE_NAME}::ItemListed'),
     );
 
     if (!listEvent) {
@@ -449,7 +451,7 @@ export class NftService {
     }
 
     const delistEvent = transaction.events.find((i: any) =>
-      (i?.type || '').includes('marketplace::DelistEvent'||'kiosk::ItemDelisted'),
+      (i?.type || '').includes('marketplace::DelistEvent'||'${process.env.KIOSK_MODULE_NAME}::ItemDelisted'),
     );
     if (!delistEvent) {
       throw new BadRequestException(
@@ -539,13 +541,13 @@ export class NftService {
   }
   //sync event kiosk: list, delist, buy
   async syncKioskEventToNft() {
-    const newEvents = await this.blockchainService.getNewKioskEventsInModule();
+    const newEvents = await this.blockchainService.getNewEventsInKioskModule();
     console.log(`${newEvents.length} new events`);
     for (let i = 0; i < newEvents.length; i++) {
       const eventData = newEvents[i].parsedJson;
       const eventType = newEvents[i].type;
       console.log('Event type', eventType);
-      if (eventType && eventType.includes('kiosk::ItemDelisted')) {
+      if (eventType && eventType.includes('${process.env.KIOSK_MODULE_NAME}::ItemDelisted')) {
         console.log(`=== Handling DELIST kiosk event: ${JSON.stringify(eventData)}`);
         const nftOnchainId = eventData.parsedJson.id;
         const userAddress = eventData.sender;
@@ -562,7 +564,7 @@ export class NftService {
           );
           await this.doDelistNft(nft.id, user);
         }
-      } else if (eventType && eventType.includes('kiosk::ItemListed')) {
+      } else if (eventType && eventType.includes('${process.env.KIOSK_MODULE_NAME}::ItemListed')) {
         console.log(`=== Handling LIST kiosk event: ${JSON.stringify(eventData)}`);
         const price = eventData.price;
         const nftOnchainId = eventData.parsedJson.id;
@@ -593,7 +595,7 @@ export class NftService {
           );
         }
       }
-      else if (eventType && eventType.includes('kiosk::ItemPurchased')) {
+      else if (eventType && eventType.includes('${process.env.KIOSK_MODULE_NAME}::ItemPurchased')) {
         console.log(`=== Handling BUY kiosk event: ${JSON.stringify(eventData)}`);
         const nftOnchainId = eventData.parsedJson.id;
         const userAddress = eventData.sender ;

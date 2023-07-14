@@ -203,7 +203,7 @@ export class BlockchainService {
     return event;
   }
 
-  //fix here
+  
   async getNewEventsInModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
       where: {},
@@ -212,6 +212,8 @@ export class BlockchainService {
         "id": "DESC"
       },
     });
+    
+    
     let eventCursor = null;
     if (lastEventLog) {
       eventCursor = JSON.parse(lastEventLog.eventId);
@@ -227,7 +229,7 @@ export class BlockchainService {
 
     let candidateEvents = [];
     const events = await provider.queryEvents({ query: eventQuery, cursor: eventCursor, order: 'ascending' });
-    console.log(events);
+    
     
     console.log(`Fetched ${events.data.length} events`)
     if (events.data.length === 0 ) {
@@ -254,7 +256,8 @@ export class BlockchainService {
 
     return candidateEvents;
   }
-  async getNewKioskEventsInModule() {
+  
+  async getNewEventsInKioskModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
       where: {},
       order: {
@@ -262,6 +265,7 @@ export class BlockchainService {
         "id": "DESC"
       },
     });
+    
     let eventCursor = null;
     if (lastEventLog) {
       eventCursor = JSON.parse(lastEventLog.eventId);
@@ -273,13 +277,14 @@ export class BlockchainService {
     const kioskEventQuery = {
       MoveModule: {
         package: process.env.KIOSK_OBJ_ID,
-        module: "kiosk"
+        module: process.env.KIOSK_MODULE_NAME
       }
     };
    
     let candidateEvents = [];
     const events = await provider.queryEvents({ query: kioskEventQuery, cursor: eventCursor, order: 'ascending' });
-    console.log(events);
+    console.log("events", events);
+    
     
     console.log(`Fetched ${events.data.length} kiosk events`)
     if (events.data.length === 0 ) {

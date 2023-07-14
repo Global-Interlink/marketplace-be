@@ -14,7 +14,8 @@ export class EventLog extends BaseEntity {
 
   @Column()
   timestamp: string;
-
+  @Column()
+  typeModule: string;
   @Column()
   rawData: string;
 }
