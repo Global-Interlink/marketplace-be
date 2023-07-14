@@ -199,7 +199,7 @@ export class BlockchainService {
     return event;
   }
 
-
+  //fix here
   async getNewEventsInModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
       where: {},
@@ -223,6 +223,8 @@ export class BlockchainService {
 
     let candidateEvents = [];
     const events = await provider.queryEvents({ query: eventQuery, cursor: eventCursor, order: 'ascending' });
+    console.log(events);
+    
     console.log(`Fetched ${events.data.length} events`)
     if (events.data.length === 0 ) {
       return [];
@@ -248,6 +250,59 @@ export class BlockchainService {
 
     return candidateEvents;
   }
+  async getNewKioskEventsInModule() {
+    const lastEventLog = await this.eventLogRepository.findOne({
+      where: {},
+      order: {
+        "timestamp": "DESC",
+        "id": "DESC"
+      },
+    });
+    let eventCursor = null;
+    if (lastEventLog) {
+      eventCursor = JSON.parse(lastEventLog.eventId);
+    }
+    console.log("Last kiosk event id", eventCursor);
+    const provider = getRPCConnection();
+    
+    
+    const kioskEventQuery = {
+      MoveModule: {
+        package: process.env.KIOSK_OBJ_ID,
+        module: "kiosk"
+      }
+    };
+   
+    let candidateEvents = [];
+    const events = await provider.queryEvents({ query: kioskEventQuery, cursor: eventCursor, order: 'ascending' });
+    console.log(events);
+    
+    console.log(`Fetched ${events.data.length} kiosk events`)
+    if (events.data.length === 0 ) {
+      return [];
+    }
+
+    const eventIds = events["data"].map((data) => JSON.stringify(data.id));
+    const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
+    .where('eventlog.eventId IN (:...keys)', { keys: eventIds })
+    .getMany();
+    const existingEventIds = existingEvents.map((e) => e.eventId);
+    for (const eventData of events["data"]) {
+      const eventId = JSON.stringify(eventData.id);
+      if (existingEventIds.includes(eventId) === false) {
+        const eventLog = new EventLog();
+        eventLog.transactionId = eventData.id.txDigest;
+        eventLog.eventId = eventId;
+        eventLog.timestamp = eventData.timestampMs?.toString();
+        eventLog.rawData = JSON.stringify(eventData);
+        await eventLog.save();
+      }
+      candidateEvents.push(eventData);
+    }
+
+    return candidateEvents;
+  }
+
 
   async delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
