@@ -205,7 +205,7 @@ export class BlockchainService {
 
   async getNewEventsInModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
-      where: {},
+      where: {typeModule: 'marketplace'},
       order: {
         'timestamp': 'DESC',
         'id': 'DESC'
@@ -254,12 +254,13 @@ export class BlockchainService {
   
   async getNewEventsInKioskModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
-      where: {},
+      where: {typeModule: process.env.KIOSK_MODULE_NAME},
       order: {
         'timestamp': 'DESC',
         'id': 'DESC'
       },
     });
+    
     
     let eventCursor = null;
     if (lastEventLog) {
@@ -267,8 +268,7 @@ export class BlockchainService {
     }
     console.log("Last kiosk event id", eventCursor);
     const provider = getRPCConnection();
-    
-    
+
     const kioskEventQuery = {
       MoveModule: {
         package: process.env.KIOSK_OBJ_ID,
@@ -277,10 +277,7 @@ export class BlockchainService {
     };
    
     let candidateEvents = [];
-    const events = await provider.queryEvents({ query: kioskEventQuery, cursor: eventCursor, order: 'ascending' });
-    console.log("events", events);
-    
-    
+    const events = await provider.queryEvents({ query: kioskEventQuery, cursor: eventCursor, order: 'ascending' });    
     console.log(`Fetched ${events.data.length} kiosk events`)
     if (events.data.length === 0 ) {
       return [];
