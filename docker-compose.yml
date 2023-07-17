@@ -41,7 +41,7 @@ services:
           - -c
           - |
               npx typeorm -d dist/db/data-source.js migration:run
-              npm run start:dev
+              npm run start
     networks:
       - be_net
 

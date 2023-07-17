@@ -203,17 +203,14 @@ export class BlockchainService {
     return event;
   }
 
-  
   async getNewEventsInModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
       where: {},
       order: {
-        "timestamp": "DESC",
-        "id": "DESC"
+        'timestamp': 'DESC',
+        'id': 'DESC'
       },
     });
-    
-    
     let eventCursor = null;
     if (lastEventLog) {
       eventCursor = JSON.parse(lastEventLog.eventId);
@@ -229,13 +226,10 @@ export class BlockchainService {
 
     let candidateEvents = [];
     const events = await provider.queryEvents({ query: eventQuery, cursor: eventCursor, order: 'ascending' });
-    
-    
     console.log(`Fetched ${events.data.length} events`)
     if (events.data.length === 0 ) {
       return [];
     }
-
     const eventIds = events["data"].map((data) => JSON.stringify(data.id));
     const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
     .where('eventlog.eventId IN (:...keys)', { keys: eventIds })
@@ -249,6 +243,7 @@ export class BlockchainService {
         eventLog.eventId = eventId;
         eventLog.timestamp = eventData.timestampMs?.toString();
         eventLog.rawData = JSON.stringify(eventData);
+        eventLog.typeModule = 'marketplace';
         await eventLog.save();
       }
       candidateEvents.push(eventData);
@@ -261,8 +256,8 @@ export class BlockchainService {
     const lastEventLog = await this.eventLogRepository.findOne({
       where: {},
       order: {
-        "timestamp": "DESC",
-        "id": "DESC"
+        'timestamp': 'DESC',
+        'id': 'DESC'
       },
     });
     
@@ -304,6 +299,7 @@ export class BlockchainService {
         eventLog.eventId = eventId;
         eventLog.timestamp = eventData.timestampMs?.toString();
         eventLog.rawData = JSON.stringify(eventData);
+        eventLog.typeModule = process.env.KIOSK_MODULE_NAME;
         await eventLog.save();
       }
       candidateEvents.push(eventData);
