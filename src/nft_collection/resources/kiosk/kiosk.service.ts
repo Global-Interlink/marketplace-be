@@ -14,22 +14,18 @@ export class KioskService {
     private nftRepository: Repository<NFT>
   ) {}
   async findAllKioskByOwnerId(
-    query: PaginateQuery,
-    owner: string
-  ): Promise<Paginated<NFT>> {
-    const userId = owner;
-    const queryBuilder = this.nftRepository
+    ownerAddress: string
+  ) {
+    const userId = ownerAddress;
+    
+    return this.nftRepository
       .createQueryBuilder('nfts')
+      .leftJoinAndSelect('nfts.owner', 'owner')
+      .leftJoinAndSelect('owner.address', 'address')
       .select('nfts.kioskId')
-      .where('nfts.ownerId = :owner', { owner })
-      .orderBy('nfts.createdDate', 'DESC');
+      .where('address.address = :ownerAddress', { ownerAddress })
+      .orderBy('nfts.createdDate', 'DESC')
+      .getMany()
 
-    return paginate(query, queryBuilder, {
-      sortableColumns: ['createdDate'],
-      nullSort: 'last',
-      searchableColumns: ['name', 'description'],
-      defaultSortBy: [['id', 'DESC']],
-      filterableColumns: {},
-    });
   }
 }

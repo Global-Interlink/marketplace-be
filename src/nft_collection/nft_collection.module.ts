@@ -7,8 +7,10 @@ import { Module } from '@nestjs/common';
 import { NftCollectionService } from './resources/nft_collection/nft_collection.service';
 import { NftCollectionController } from './resources/nft_collection/nft_collection.controller';
 import { NftController } from './resources/nft/nft.controller';
+import { KioskController } from './resources/kiosk/kiosk.controller';
 import { NFT } from './entities/nft.entity';
 import { NftService } from './resources/nft/nft.service';
+import { KioskService } from './resources/kiosk/kiosk.service';
 import { NftPropertyService } from './resources/nft_property/nft_property.service';
 import { NFTProperty } from './entities/nft_property.entity';
 import { BlockchainService } from 'src/blockchain/blockchain.service';
@@ -39,7 +41,7 @@ import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
       EventLog
     ]),
   ],
-  controllers: [NftCollectionController, NftController],
+  controllers: [NftCollectionController, NftController, KioskController],
   providers: [
     NftCollectionService,
     NftService,
@@ -49,7 +51,8 @@ import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
     UserService,
     OrderService,
     SaleItemService,
+    KioskService
   ],
-  exports: [NftService, UserService, OrderService, SaleItemService],
+  exports: [NftService, KioskService, UserService, OrderService, SaleItemService],
 })
 export class NftCollectionModule {}
