@@ -8,6 +8,7 @@ import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { ObjectId, PaginatedObjectsResponse, SuiObjectResponse, SuiTransactionBlockResponse } from '@mysten/sui.js';
 import { EventLog } from './entities/event.entity';
 import { getRPCConnection } from "../../src/utils/common";
+import { NftPropertyService } from 'src/nft_collection/resources/nft_property/nft_property.service';
 
 @UseInterceptors(SentryInterceptor)
 @Injectable()
@@ -19,6 +20,7 @@ export class BlockchainService {
     private networkRepository: Repository<Network>,
     @InjectRepository(EventLog)
     private eventLogRepository: Repository<EventLog>,
+    private nftPropertyService: NftPropertyService,
   ) {}
 
   async getNetworkBychain(chain: string) {
@@ -63,10 +65,14 @@ export class BlockchainService {
     const objectIds = await this.getAllObjects(userAddress);
     const nftObjects = await this.getNftObjectsFromObjectIds(objectIds);
 
-    const result = nftObjects.map((nft) => {
-      const image_url = nft.data.content.fields.url || nft.data.content.fields.img_url || nft.data.display.data.image_url
-      return {
-        name: nft.data.content.fields?.name || nft.data.display.data.name,
+    let result = [];
+
+    for (const nft of nftObjects) {
+      const nftProperties = await this.nftPropertyService.detectNftProperty(nft);
+
+      const image_url = nft.data.content.fields?.url || nft.data.content.fields?.img_url || nft.data.display.data.image_url
+      result.push({
+        name: nft.data.content.fields?.name || nft.data.display.data?.name || nft.data.content.fields.id.id,
         description: nft.data.content.fields?.description || nft.data.display.data?.description || null,
         url: encodeURI(image_url),
         objectId: nft.data.content.fields.id.id,
@@ -74,8 +80,9 @@ export class BlockchainService {
         nftType: nft.data.type,
         kioskId: nft.kioskId,
         kioskOwnerCapId: nft.kioskOwnerCapId,
-      };
-    });
+        properties: nftProperties,
+      });
+    }
 
     return result;
   }
@@ -87,8 +94,10 @@ export class BlockchainService {
     let dynamicFieldObjectIds = [];
 
     for (const obj of detailOfObjects) {
-      if (obj.data?.content?.fields.nft !== undefined || (obj.data?.content?.fields.name !== undefined && 
-        (obj.data?.content?.fields.img_url !== undefined || obj.data?.content?.fields.url !== undefined))) {
+      if (obj.data?.content?.fields.nft !== undefined || (obj.data?.content?.fields.name !== undefined &&
+        (obj.data?.content?.fields.img_url !== undefined || obj.data?.content?.fields.url !== undefined)) ||
+        (obj.data.display.data?.name !== undefined && obj.data?.display?.data?.image_url !== undefined) ||
+        (obj.data.type === '0xee496a0cc04d06a345982ba6697c90c619020de9e274408c7819f787ff66e1a1::suifrens::SuiFren<0x8894fa02fc6f36cbc485ae9145d05f247a78e220814fb8419ab261bd81f08f32::bullshark::Bullshark>')) {
         nftObjects.push({...obj, kioskId: kioskObjectId, kioskOwnerCapId: kioskOwnerCapId });
       } else if (obj.data?.type.includes('kiosk::KioskOwnerCap')) {
         dynamicFieldObjectIds.push({
@@ -101,7 +110,7 @@ export class BlockchainService {
     if (dynamicFieldObjectIds.length > 0) {
       for (const data of dynamicFieldObjectIds) {
         const itemObjectIds = await this.getItemIdFromDynamicFields(data.kioskId);
-        
+
         if (itemObjectIds.length > 0) {
           nftObjects.push(...(await this.getNftObjectsFromObjectIds(itemObjectIds, data.kioskId, data.kioskObjectId)));
         }

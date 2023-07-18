@@ -106,3 +106,4 @@ dist
 pgdata/
 package-lock.json
 yarn.lock
+.vscode
