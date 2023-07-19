@@ -24,6 +24,7 @@ import { Order } from 'src/marketplace/order/entities/order.entity';
 import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
+import { NftPropertyController } from './resources/nft_property/nft_property.controller';
 
 @Module({
   imports: [
@@ -41,7 +42,7 @@ import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
       EventLog
     ]),
   ],
-  controllers: [NftCollectionController, NftController, KioskController],
+  controllers: [NftCollectionController, NftController, KioskController, NftPropertyController],
   providers: [
     NftCollectionService,
     NftService,

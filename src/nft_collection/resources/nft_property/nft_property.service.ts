@@ -4,6 +4,7 @@ import { NFT } from 'src/nft_collection/entities/nft.entity';
 import { NFTProperty } from 'src/nft_collection/entities/nft_property.entity';
 import { Repository } from 'typeorm';
 import { NftPropertyType } from './nft_property.type';
+import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
 @Injectable()
 export class NftPropertyService {
@@ -40,5 +41,19 @@ export class NftPropertyService {
     }
 
     return [];
+  }
+
+  async filterPropertyDataByCollection(collectionId) {
+    return this.nftPropertyRepository
+      .createQueryBuilder('nftProperty')
+      .select('nftProperty.name, nftProperty.value')
+      .addSelect("COUNT(*)", "count")
+      .innerJoin('nftProperty.nft', 'nft')
+      .innerJoin('nft.saleItems', 'saleItems')
+      .innerJoin('nft.collection', 'collection')
+      .where('collection.id = :collectionId', { collectionId })
+      .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE })
+      .groupBy('nftProperty.name, nftProperty.value')
+      .getRawMany();
   }
 }

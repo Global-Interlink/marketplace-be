@@ -57,12 +57,14 @@ export class NftController {
     @Param('idCollection') id: string,
     @Paginate() query: PaginateQuery,
     @Query() rangePrice: RangePriceDto,
+    @Query() filterProperties: any,
   ) {
     const collection = await this.nftCollectionService.findOne(id);
     return await this.nftService.findByCollection(
       query,
       collection,
       rangePrice,
+      filterProperties,
     );
   }
 

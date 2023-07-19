@@ -86,6 +86,7 @@ export class NftService {
     query: PaginateQuery,
     collection: NFTCollection,
     queryRangePrice: any,
+    filterProperties: any,
   ) {
     console.log(queryRangePrice, 'eeee');
     const collectionId = collection.id;
@@ -97,6 +98,7 @@ export class NftService {
       .leftJoinAndSelect('address.network', 'network')
       .leftJoinAndSelect('nfts.saleItems', 'saleItems')
       .leftJoinAndSelect('nfts.collection', 'collection')
+      .leftJoin('nfts.properties', 'nftProperties')
       .where('collection.id = :collectionId', { collectionId })
       .andWhere('saleItems.state = :state', { state: SaleItemState.ON_SALE });
     // .orderBy('nfts.createdDate', 'DESC')
@@ -121,6 +123,20 @@ export class NftService {
     if (queryRangePrice.sortBy) {
       const [sortPrice, typeSort] = queryRangePrice.sortBy.split(':');
       queryBuilder.orderBy(sortPrice, typeSort);
+    }
+
+    if (filterProperties) {
+      for (const key in filterProperties) {
+        if (!(filterProperties[key] instanceof Array)) {
+          continue;
+        }
+
+        const values = filterProperties[key].filter(item => !!item)
+        if (values) {
+          queryBuilder.andWhere('nftProperties.name = :key', { key })
+            .andWhere('nftProperties.value IN (:...values)', { values })
+        }
+      }
     }
     return paginate(query, queryBuilder, {
       sortableColumns: ['createdDate'],
