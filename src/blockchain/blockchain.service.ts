@@ -203,13 +203,12 @@ export class BlockchainService {
     return event;
   }
 
-
   async getNewEventsInModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
-      where: {},
+      where: {typeModule: 'marketplace'},
       order: {
-        "timestamp": "DESC",
-        "id": "DESC"
+        'timestamp': 'DESC',
+        'id': 'DESC'
       },
     });
     let eventCursor = null;
@@ -231,6 +230,58 @@ export class BlockchainService {
     if (events.data.length === 0 ) {
       return [];
     }
+    const eventIds = events["data"].map((data) => JSON.stringify(data.id));
+    const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
+    .where('eventlog.eventId IN (:...keys)', { keys: eventIds })
+    .getMany();
+    const existingEventIds = existingEvents.map((e) => e.eventId);
+    for (const eventData of events["data"]) {
+      const eventId = JSON.stringify(eventData.id);
+      if (existingEventIds.includes(eventId) === false) {
+        const eventLog = new EventLog();
+        eventLog.transactionId = eventData.id.txDigest;
+        eventLog.eventId = eventId;
+        eventLog.timestamp = eventData.timestampMs?.toString();
+        eventLog.rawData = JSON.stringify(eventData);
+        eventLog.typeModule = 'marketplace';
+        await eventLog.save();
+      }
+      candidateEvents.push(eventData);
+    }
+
+    return candidateEvents;
+  }
+  
+  async getNewEventsInKioskModule() {
+    const lastEventLog = await this.eventLogRepository.findOne({
+      where: {typeModule: process.env.KIOSK_MODULE_NAME},
+      order: {
+        'timestamp': 'DESC',
+        'id': 'DESC'
+      },
+    });
+    
+    
+    let eventCursor = null;
+    if (lastEventLog) {
+      eventCursor = JSON.parse(lastEventLog.eventId);
+    }
+    console.log("Last kiosk event id", eventCursor);
+    const provider = getRPCConnection();
+
+    const kioskEventQuery = {
+      MoveModule: {
+        package: process.env.KIOSK_OBJ_ID,
+        module: process.env.KIOSK_MODULE_NAME
+      }
+    };
+   
+    let candidateEvents = [];
+    const events = await provider.queryEvents({ query: kioskEventQuery, cursor: eventCursor, order: 'ascending' });    
+    console.log(`Fetched ${events.data.length} kiosk events`)
+    if (events.data.length === 0 ) {
+      return [];
+    }
 
     const eventIds = events["data"].map((data) => JSON.stringify(data.id));
     const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
@@ -245,6 +296,7 @@ export class BlockchainService {
         eventLog.eventId = eventId;
         eventLog.timestamp = eventData.timestampMs?.toString();
         eventLog.rawData = JSON.stringify(eventData);
+        eventLog.typeModule = process.env.KIOSK_MODULE_NAME;
         await eventLog.save();
       }
       candidateEvents.push(eventData);
@@ -252,6 +304,7 @@ export class BlockchainService {
 
     return candidateEvents;
   }
+
 
   async delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );

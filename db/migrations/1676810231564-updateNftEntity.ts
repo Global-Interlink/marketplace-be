@@ -16,3 +16,4 @@ export class updateNftEntity1676810231564 implements MigrationInterface {
     }
 
 }
+

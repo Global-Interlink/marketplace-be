@@ -12,3 +12,4 @@ export class AddKioskOwnerCapIdColumnIntoNftTable1689179231172 implements Migrat
     }
 
 }
+
