@@ -13,12 +13,15 @@ export class CronService {
   @UseInterceptors(SentryInterceptor)
   @Cron(CronExpression.EVERY_10_SECONDS)
   async syncEventLogFromOnChainMarketplace() {
-    return await this.nftService.syncMarketplaceEventToNft() ;
+
+    await this.nftService.syncMarketplaceEventToNft() ;
+    return ;
   }
   @UseInterceptors(SentryInterceptor)
   @Cron(CronExpression.EVERY_10_SECONDS)
   async syncEventLogFromOnChainKiosk() {
-    return await this.nftService.syncKioskEventToNft() ;
+    await this.nftService.syncKioskEventToNft() ;
+    return ;
   }
 
   // @UseInterceptors(SentryInterceptor)

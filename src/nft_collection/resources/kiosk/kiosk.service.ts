@@ -22,6 +22,7 @@ export class KioskService {
       .createQueryBuilder('nfts')
       .leftJoinAndSelect('nfts.owner', 'owner')
       .leftJoinAndSelect('owner.address', 'address')
+      .distinct(true)
       .select('nfts.kioskId')
       .where('address.address = :ownerAddress', { ownerAddress })
       .orderBy('nfts.createdDate', 'DESC')
