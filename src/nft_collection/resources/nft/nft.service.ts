@@ -25,6 +25,7 @@ import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { SaleItemBuyType } from 'src/marketplace/sale_item/sale_item.constants';
 import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 import { Address } from 'src/blockchain/entities/address.entity';
+import { NftPropertyService } from '../nft_property/nft_property.service';
 
 @Injectable()
 export class NftService {
@@ -35,6 +36,7 @@ export class NftService {
     private blockchainService: BlockchainService,
     private userService: UserService,
     private orderService: OrderService,
+    private nftPropertyService: NftPropertyService,
     private saleItemService: SaleItemService, // @InjectRepository(Address) // private addressRepository: Repository<Address>
   ) {}
   // async syncOwnerNfts() {
@@ -244,7 +246,7 @@ export class NftService {
 
   async saveNftFromOnChainData(nft: NFTDto, user: User) {
     const existed = await this.nftRepository.findOne({
-      relations: { collection: true },
+      relations: { collection: true, properties: true },
       where: { onChainId: nft.objectId },
     });
 
@@ -258,6 +260,10 @@ export class NftService {
       kioskId: nft.kioskId,
       kioskOwnerCapId: nft.kioskOwnerCapId,
     };
+
+    if (existed && existed.properties.length === 0 && nft.properties.length > 0) {
+      nft.properties.map(async (property) => await this.nftPropertyService.create(property, existed));
+    }
 
     if (existed && existed?.collection?.id) {
       return await this.nftRepository.update({ id: existed.id }, nftDataUpdate);
@@ -278,10 +284,14 @@ export class NftService {
       );
     }
 
-    return await this.nftRepository.save({
+    const newNft = await this.nftRepository.save({
       ...nftDataUpdate,
       ...(collection && { collection }),
     });
+
+    nft.properties.map(async (property) => await this.nftPropertyService.create(property, newNft));
+
+    return newNft;
   }
 
   async getAllNftByUser(user: User, query: PaginateQuery) {

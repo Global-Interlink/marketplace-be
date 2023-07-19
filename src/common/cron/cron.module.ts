@@ -22,6 +22,8 @@ import { BlockchainModule } from 'src/blockchain/blockchain.module';
 import { SignMessage } from 'src/user/entities/signmessage.entity';
 import { EventLog } from 'src/blockchain/entities/event.entity';
 import { OrderService } from 'src/marketplace/order/order.service';
+import { NftPropertyService } from 'src/nft_collection/resources/nft_property/nft_property.service';
+import { NFTProperty } from 'src/nft_collection/entities/nft_property.entity';
 
 @Module({
   imports: [
@@ -35,13 +37,14 @@ import { OrderService } from 'src/marketplace/order/order.service';
       NFT,
       NFTCollection,
       EventLog,
-      SignMessage
+      SignMessage,
+      NFTProperty,
     ]),
     OrderModule,
     NftCollectionModule,
     BlockchainModule
   ],
-  providers: [CronService, NftService, NftCollectionService, BlockchainService, UserService, OrderService, SaleItemService, IpfsService],
+  providers: [CronService, NftService, NftCollectionService, BlockchainService, UserService, OrderService, SaleItemService, IpfsService, NftPropertyService],
   exports: [CronService],
   controllers: [CronController]
 })
