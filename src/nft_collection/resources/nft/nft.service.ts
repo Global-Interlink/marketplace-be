@@ -578,7 +578,7 @@ export class NftService {
       console.log('Event type', eventType);
       if (
         eventType &&
-        eventType.includes('${process.env.KIOSK_MODULE_NAME}::DeListEvent')
+        eventType.includes(`${process.env.KIOSK_MODULE_NAME}::DeListEvent`)
       ) {
         console.log(
           `=== Handling DELIST kiosk event: ${JSON.stringify(eventData)}`,
@@ -600,7 +600,7 @@ export class NftService {
         }
       } else if (
         eventType &&
-        eventType.includes('${process.env.KIOSK_MODULE_NAME}::ListingEvent')
+        eventType.includes(`${process.env.KIOSK_MODULE_NAME}::ListingEvent`)
       ) {
         console.log(
           `=== Handling LIST kiosk event: ${JSON.stringify(eventData)}`,
@@ -635,7 +635,7 @@ export class NftService {
         }
       } else if (
         eventType &&
-        eventType.includes('${process.env.KIOSK_MODULE_NAME}::BuyEvent')
+        eventType.includes(`${process.env.KIOSK_MODULE_NAME}::BuyEvent`)
       ) {
         console.log(
           `=== Handling BUY kiosk event: ${JSON.stringify(eventData)}`,
