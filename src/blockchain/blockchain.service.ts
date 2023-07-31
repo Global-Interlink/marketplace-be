@@ -8,6 +8,7 @@ import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { ObjectId, PaginatedObjectsResponse, SuiObjectResponse, SuiTransactionBlockResponse } from '@mysten/sui.js';
 import { EventLog } from './entities/event.entity';
 import { getRPCConnection } from "../../src/utils/common";
+import { NftPropertyService } from 'src/nft_collection/resources/nft_property/nft_property.service';
 
 @UseInterceptors(SentryInterceptor)
 @Injectable()
@@ -19,6 +20,7 @@ export class BlockchainService {
     private networkRepository: Repository<Network>,
     @InjectRepository(EventLog)
     private eventLogRepository: Repository<EventLog>,
+    private nftPropertyService: NftPropertyService,
   ) {}
 
   async getNetworkBychain(chain: string) {
@@ -61,26 +63,82 @@ export class BlockchainService {
 
   async getNftsBySuiAccount(userAddress: string): Promise<NFTDto[]> {
     const objectIds = await this.getAllObjects(userAddress);
-    const detailOfObjects: any = await this.getMultiObjects(objectIds)
-    const nftObjects = detailOfObjects.filter((x) => {
-      return (
-        x.data?.content?.fields.nft !== undefined || (
-        x.data?.content?.fields.name !== undefined &&
-        (x.data?.content?.fields.img_url !== undefined || x.data?.content?.fields.url !== undefined))
-      );
-    });
-    const result = nftObjects.map((nft) => {
-      const image_url = nft.data.content.fields.url || nft.data.content.fields.img_url || nft.data.display.data.image_url
-      return {
-        name: nft.data.content.fields?.name || nft.data.display.data.name,
+    const nftObjects = await this.getNftObjectsFromObjectIds(objectIds);
+
+    let result = [];
+
+    for (const nft of nftObjects) {
+      const nftProperties = await this.nftPropertyService.detectNftProperty(nft);
+
+      const image_url = nft.data.content.fields?.url || nft.data.content.fields?.img_url || nft.data.display.data.image_url
+      result.push({
+        name: nft.data.content.fields?.name || nft.data.display.data?.name || nft.data.content.fields.id.id,
         description: nft.data.content.fields?.description || nft.data.display.data?.description || null,
         url: encodeURI(image_url),
         objectId: nft.data.content.fields.id.id,
         owner: nft.data.owner.AddressOwner,
         nftType: nft.data.type,
-      };
-    });
+        kioskId: nft.kioskId,
+        kioskOwnerCapId: nft.kioskOwnerCapId,
+        properties: nftProperties,
+      });
+    }
+
     return result;
+  }
+
+  async getNftObjectsFromObjectIds(objectIds, kioskObjectId?, kioskOwnerCapId?) {
+    const detailOfObjects: any = await this.getMultiObjects(objectIds)
+
+    let nftObjects = [];
+    let dynamicFieldObjectIds = [];
+
+    for (const obj of detailOfObjects) {
+      if (obj.data?.content?.fields.nft !== undefined || (obj.data?.content?.fields.name !== undefined &&
+        (obj.data?.content?.fields.img_url !== undefined || obj.data?.content?.fields.url !== undefined)) ||
+        (obj.data.display.data?.name !== undefined && obj.data?.display?.data?.image_url !== undefined) ||
+        (obj.data.type === '0xee496a0cc04d06a345982ba6697c90c619020de9e274408c7819f787ff66e1a1::suifrens::SuiFren<0x8894fa02fc6f36cbc485ae9145d05f247a78e220814fb8419ab261bd81f08f32::bullshark::Bullshark>')) {
+        nftObjects.push({...obj, kioskId: kioskObjectId, kioskOwnerCapId: kioskOwnerCapId });
+      } else if (obj.data?.type.includes('kiosk::KioskOwnerCap')) {
+        dynamicFieldObjectIds.push({
+          kioskId: obj.data?.content.fields.for,
+          kioskObjectId: obj.data?.objectId,
+        });
+      }
+    }
+
+    if (dynamicFieldObjectIds.length > 0) {
+      for (const data of dynamicFieldObjectIds) {
+        const itemObjectIds = await this.getItemIdFromDynamicFields(data.kioskId);
+
+        if (itemObjectIds.length > 0) {
+          nftObjects.push(...(await this.getNftObjectsFromObjectIds(itemObjectIds, data.kioskId, data.kioskObjectId)));
+        }
+      }
+    }
+
+    return nftObjects;
+  }
+
+  async getItemIdFromDynamicFields(kioskObjectId: string, result?: string[], nextCursor?: any): Promise<string[]> {
+    const provider = getRPCConnection();
+    const dynamicFields = await provider.getDynamicFields({parentId: kioskObjectId, ...(nextCursor && { cursor: nextCursor }) });
+    const nftObjectIds = dynamicFields.data.filter((x) => {
+      return (
+        x.name.type.includes('kiosk::Item')
+      );
+    }).map(obj => obj.objectId);
+    const currentResult = result ? [...result, ...nftObjectIds] : nftObjectIds;
+
+    if (!dynamicFields.hasNextPage) {
+      return currentResult;
+    }
+
+    if (dynamicFields.nextCursor) {
+      return await this.getItemIdFromDynamicFields(kioskObjectId, currentResult, dynamicFields.nextCursor);
+    }
+
+    return currentResult;
   }
 
   async getMultiObjects(objectIds: string[]): Promise<SuiObjectResponse[]> {
@@ -154,13 +212,12 @@ export class BlockchainService {
     return event;
   }
 
-
   async getNewEventsInModule() {
     const lastEventLog = await this.eventLogRepository.findOne({
-      where: {},
+      where: {typeModule: 'marketplace'},
       order: {
-        "timestamp": "DESC",
-        "id": "DESC"
+        'timestamp': 'DESC',
+        'id': 'DESC'
       },
     });
     let eventCursor = null;
@@ -182,6 +239,58 @@ export class BlockchainService {
     if (events.data.length === 0 ) {
       return [];
     }
+    const eventIds = events["data"].map((data) => JSON.stringify(data.id));
+    const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
+    .where('eventlog.eventId IN (:...keys)', { keys: eventIds })
+    .getMany();
+    const existingEventIds = existingEvents.map((e) => e.eventId);
+    for (const eventData of events["data"]) {
+      const eventId = JSON.stringify(eventData.id);
+      if (existingEventIds.includes(eventId) === false) {
+        const eventLog = new EventLog();
+        eventLog.transactionId = eventData.id.txDigest;
+        eventLog.eventId = eventId;
+        eventLog.timestamp = eventData.timestampMs?.toString();
+        eventLog.rawData = JSON.stringify(eventData);
+        eventLog.typeModule = 'marketplace';
+        await eventLog.save();
+      }
+      candidateEvents.push(eventData);
+    }
+
+    return candidateEvents;
+  }
+  
+  async getNewEventsInKioskModule() {
+    const lastEventLog = await this.eventLogRepository.findOne({
+      where: {typeModule: process.env.KIOSK_MODULE_NAME},
+      order: {
+        'timestamp': 'DESC',
+        'id': 'DESC'
+      },
+    });
+    
+    
+    let eventCursor = null;
+    if (lastEventLog) {
+      eventCursor = JSON.parse(lastEventLog.eventId);
+    }
+    console.log("Last kiosk event id", eventCursor);
+    const provider = getRPCConnection();
+
+    const kioskEventQuery = {
+      MoveModule: {
+        package: process.env.KIOSK_OBJ_ID,
+        module: process.env.KIOSK_MODULE_NAME
+      }
+    };
+   
+    let candidateEvents = [];
+    const events = await provider.queryEvents({ query: kioskEventQuery, cursor: eventCursor, order: 'ascending' });    
+    console.log(`Fetched ${events.data.length} kiosk events`)
+    if (events.data.length === 0 ) {
+      return [];
+    }
 
     const eventIds = events["data"].map((data) => JSON.stringify(data.id));
     const existingEvents = await this.eventLogRepository.createQueryBuilder("eventlog")
@@ -196,6 +305,7 @@ export class BlockchainService {
         eventLog.eventId = eventId;
         eventLog.timestamp = eventData.timestampMs?.toString();
         eventLog.rawData = JSON.stringify(eventData);
+        eventLog.typeModule = process.env.KIOSK_MODULE_NAME;
         await eventLog.save();
       }
       candidateEvents.push(eventData);
@@ -203,6 +313,7 @@ export class BlockchainService {
 
     return candidateEvents;
   }
+
 
   async delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );

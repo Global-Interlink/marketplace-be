@@ -14,6 +14,8 @@ import { NFT } from 'src/nft_collection/entities/nft.entity';
 import { SaleItemService } from 'src/marketplace/sale_item/sale_item.service';
 import { Auction } from 'src/marketplace/sale_item/entities/auction.entity';
 import { EventLog } from './entities/event.entity';
+import { NftPropertyService } from 'src/nft_collection/resources/nft_property/nft_property.service';
+import { NFTProperty } from 'src/nft_collection/entities/nft_property.entity';
 
 @Module({
   imports: [
@@ -27,10 +29,11 @@ import { EventLog } from './entities/event.entity';
       SaleItem,
       NFT,
       Auction,
+      NFTProperty,
     ]),
   ],
   controllers: [BlockchainController],
-  providers: [BlockchainService, UserService, OrderService, SaleItemService],
+  providers: [BlockchainService, UserService, OrderService, SaleItemService, NftPropertyService],
   exports: [BlockchainService],
 })
 export class BlockchainModule {}
