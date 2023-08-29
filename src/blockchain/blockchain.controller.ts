@@ -1,4 +1,11 @@
-import { Body, Controller, forwardRef, Inject, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  forwardRef,
+  Inject,
+  Post,
+  Get,
+} from '@nestjs/common';
 import { OrderService } from 'src/marketplace/order/order.service';
 import { NftService } from 'src/nft_collection/resources/nft/nft.service';
 import { UserService } from 'src/user/user.service';
@@ -21,6 +28,11 @@ export class BlockchainController {
       verifyTransaction.txHash,
       verifyTransaction.chain,
     );
+    return data;
+  }
+  @Get('statistic')
+  async getStatisticData() {
+    const data = await this.blockchainService.getStatisticData();
     return data;
   }
 }
