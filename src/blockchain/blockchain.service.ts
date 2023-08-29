@@ -8,6 +8,9 @@ import { NFTDto } from 'src/nft_collection/dto/list-nft.dto';
 import { ObjectId, PaginatedObjectsResponse, SuiObjectResponse, SuiTransactionBlockResponse } from '@mysten/sui.js';
 import { EventLog } from './entities/event.entity';
 import { getRPCConnection } from "../../src/utils/common";
+import { NFT } from 'src/nft_collection/entities/nft.entity';
+import { SaleItem } from 'src/marketplace/sale_item/entities/sale_item.entity';
+import { SaleItemState } from 'src/marketplace/sale_item/sale_item.constants';
 
 @UseInterceptors(SentryInterceptor)
 @Injectable()
@@ -19,6 +22,10 @@ export class BlockchainService {
     private networkRepository: Repository<Network>,
     @InjectRepository(EventLog)
     private eventLogRepository: Repository<EventLog>,
+    @InjectRepository(NFT)
+    private nftRepository: Repository<NFT>,
+    @InjectRepository(SaleItem)
+    private saleItemRepository: Repository<SaleItem>,
   ) {}
 
   async getNetworkBychain(chain: string) {
@@ -320,5 +327,16 @@ export class BlockchainService {
     }
 
     return batches;
+  }
+  async getStatisticData(){
+    const nftsCount = await this.nftRepository.count({});
+    const buyCount = await this.saleItemRepository.count({where: {state: SaleItemState.ON_SALE}})
+    const listNFTCount = await this.saleItemRepository.count({});
+    const dataCount = {
+      nftsCount: nftsCount,
+      buyCount: buyCount,
+      listNFTCount: listNFTCount
+    }
+    return dataCount;
   }
 }
